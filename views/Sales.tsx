@@ -107,7 +107,10 @@ const Sales = ({ user }: { user: User }) => {
     <div className="space-y-6">
       <div className="flex flex-col gap-6">
         <div className="flex justify-between items-center">
-          <p className="text-slate-500 font-medium">Daily Cash Register Records (Shift-based)</p>
+          <div>
+            <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">Purchases</h1>
+            <p className="text-slate-500 font-medium">Daily Cash Register Records (Shift-based)</p>
+          </div>
           <button 
             onClick={() => { setEditingId(null); setNewSale(initialForm); setModalOpen(true); }}
             className="bg-primary text-white p-3 lg:px-6 lg:py-3 rounded-2xl flex items-center gap-2 font-black shadow-xl shadow-primary/20 active:scale-95 transition-all"
