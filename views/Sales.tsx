@@ -108,7 +108,7 @@ const Sales = ({ user }: { user: User }) => {
       <div className="flex flex-col gap-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">Purchases</h1>
+            <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">Daily Sales</h1>
             <p className="text-slate-500 font-medium">Daily Cash Register Records (Shift-based)</p>
           </div>
           <button 
