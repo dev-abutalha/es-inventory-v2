@@ -12,7 +12,8 @@ import {
   Users as UsersIcon,
   MoreHorizontal,
   PackageCheck,
-  ClipboardList
+  ClipboardList,
+  Trash2
 } from 'lucide-react';
 import { db } from './db';
 import { User, UserRole } from './types';
@@ -28,6 +29,7 @@ import Users from './views/Users';
 import Login from './views/Login';
 import Assignment from './views/Assignment';
 import ProductRequests from './views/ProductRequests';
+import Wastage from './views/Wastage';
 
 const NavItem = ({ to, icon: Icon, label, active, onClick }: any) => (
   <Link
@@ -58,7 +60,9 @@ const BottomTab = ({ to, icon: Icon, label, active }: any) => (
 
 const Sidebar = ({ isOpen, setOpen, user, onLogout }: any) => {
   const location = useLocation();
-  const isAdmin = user.role === UserRole.ADMIN;
+  const isSuperAdmin = user.role === UserRole.ADMIN;
+  const isCentralAdmin = user.role === UserRole.CENTRAL_ADMIN;
+  const isAnyAdmin = isSuperAdmin || isCentralAdmin;
 
   return (
     <>
@@ -80,24 +84,37 @@ const Sidebar = ({ isOpen, setOpen, user, onLogout }: any) => {
             <NavItem to="/" icon={LayoutDashboard} label="Dashboard" active={location.pathname === '/'} onClick={() => setOpen(false)} />
             
             <div className="mt-6 mb-2 px-4 text-[10px] font-black text-slate-300 uppercase tracking-widest">Operations</div>
-            <NavItem to="/sales" icon={ShoppingCart} label="Sales" active={location.pathname === '/sales'} onClick={() => setOpen(false)} />
-            {isAdmin && (
+            
+            {/* Sales restricted to SuperAdmin and Managers (Central admin logistics only) */}
+            {(isSuperAdmin || user.role === UserRole.STORE_MANAGER) && (
+              <NavItem to="/sales" icon={ShoppingCart} label="Sales" active={location.pathname === '/sales'} onClick={() => setOpen(false)} />
+            )}
+            
+            {isSuperAdmin && (
               <NavItem to="/purchases" icon={CreditCard} label="Purchases" active={location.pathname === '/purchases'} onClick={() => setOpen(false)} />
             )}
+
             <NavItem to="/requests" icon={ClipboardList} label="Product Requests" active={location.pathname === '/requests'} onClick={() => setOpen(false)} />
+            <NavItem to="/wastage" icon={Trash2} label="Wastage (Mermas)" active={location.pathname === '/wastage'} onClick={() => setOpen(false)} />
             
-            {isAdmin && (
+            {isAnyAdmin && (
               <>
+                <div className="mt-8 mb-2 px-4 text-[10px] font-black text-slate-300 uppercase tracking-widest">Logistics Hub</div>
                 <NavItem to="/assignment" icon={PackageCheck} label="Assign to Store" active={location.pathname === '/assignment'} onClick={() => setOpen(false)} />
-                <NavItem to="/expenses" icon={Receipt} label="Expenses" active={location.pathname === '/expenses'} onClick={() => setOpen(false)} />
-                
-                <div className="mt-8 mb-2 px-4 text-[10px] font-black text-slate-300 uppercase tracking-widest">Admin Hub</div>
                 <NavItem to="/stores" icon={Store} label="Store Locations" active={location.pathname === '/stores'} onClick={() => setOpen(false)} />
                 <NavItem to="/users" icon={UsersIcon} label="Staff Directory" active={location.pathname === '/users'} onClick={() => setOpen(false)} />
+              </>
+            )}
+
+            {isSuperAdmin && (
+              <>
+                <div className="mt-8 mb-2 px-4 text-[10px] font-black text-slate-300 uppercase tracking-widest">Financial Hub</div>
+                <NavItem to="/expenses" icon={Receipt} label="Expenses" active={location.pathname === '/expenses'} onClick={() => setOpen(false)} />
                 <NavItem to="/reports" icon={BarChart3} label="Analytics" active={location.pathname === '/reports'} onClick={() => setOpen(false)} />
               </>
             )}
-            {!isAdmin && (
+
+            {!isAnyAdmin && (
                 <NavItem to="/expenses" icon={Receipt} label="My Expenses" active={location.pathname === '/expenses'} onClick={() => setOpen(false)} />
             )}
           </nav>
@@ -151,7 +168,10 @@ const AppContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<User | null>(db.getActiveUser());
   const location = useLocation();
-  const isAdmin = user?.role === UserRole.ADMIN;
+  
+  const isSuperAdmin = user?.role === UserRole.ADMIN;
+  const isCentralAdmin = user?.role === UserRole.CENTRAL_ADMIN;
+  const isAnyAdmin = isSuperAdmin || isCentralAdmin;
 
   const handleLogout = () => {
     db.logout();
@@ -172,26 +192,47 @@ const AppContent = () => {
         <main className="flex-1 p-5 md:p-10 max-w-7xl mx-auto w-full overflow-x-hidden">
           <Routes>
             <Route path="/" element={<Dashboard user={user} />} />
-            <Route path="/stores" element={<Stores user={user} />} />
+            <Route 
+              path="/stores" 
+              element={isAnyAdmin ? <Stores user={user} /> : <Navigate to="/" replace />} 
+            />
             <Route 
               path="/purchases" 
-              element={isAdmin ? <Purchases user={user} /> : <Navigate to="/" replace />} 
+              element={isSuperAdmin ? <Purchases user={user} /> : <Navigate to="/" replace />} 
             />
-            <Route path="/sales" element={<Sales user={user} />} />
-            <Route path="/expenses" element={<Expenses user={user} />} />
-            <Route path="/reports" element={<Reports user={user} />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/assignment" element={<Assignment user={user} />} />
+            <Route 
+              path="/sales" 
+              element={(isSuperAdmin || !isAnyAdmin) ? <Sales user={user} /> : <Navigate to="/" replace />} 
+            />
+            <Route 
+              path="/expenses" 
+              element={!isCentralAdmin ? <Expenses user={user} /> : <Navigate to="/" replace />} 
+            />
+            <Route 
+              path="/reports" 
+              element={isSuperAdmin ? <Reports user={user} /> : <Navigate to="/" replace />} 
+            />
+            <Route 
+              path="/users" 
+              element={isAnyAdmin ? <Users /> : <Navigate to="/" replace />} 
+            />
+            <Route 
+              path="/assignment" 
+              element={isAnyAdmin ? <Assignment user={user} /> : <Navigate to="/" replace />} 
+            />
             <Route path="/requests" element={<ProductRequests user={user} />} />
+            <Route path="/wastage" element={<Wastage user={user} />} />
           </Routes>
         </main>
       </div>
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-slate-100 z-[60] flex items-center justify-around px-2 lg:hidden h-20 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.1)]">
         <BottomTab to="/" icon={LayoutDashboard} label="Home" active={location.pathname === '/'} />
-        <BottomTab to="/sales" icon={ShoppingCart} label="Sales" active={location.pathname === '/sales'} />
-        <BottomTab to="/requests" icon={ClipboardList} label="Requests" active={location.pathname === '/requests'} />
-        {isAdmin && (
+        {(isSuperAdmin || !isAnyAdmin) && (
+          <BottomTab to="/sales" icon={ShoppingCart} label="Sales" active={location.pathname === '/sales'} />
+        )}
+        <BottomTab to="/wastage" icon={Trash2} label="Wastage" active={location.pathname === '/wastage'} />
+        {isSuperAdmin && (
           <BottomTab to="/purchases" icon={CreditCard} label="Purchases" active={location.pathname === '/purchases'} />
         )}
         <button 

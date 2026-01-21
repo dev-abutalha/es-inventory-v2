@@ -42,7 +42,6 @@ const ProductRequests = ({ user }: { user: User }) => {
     e.preventDefault();
     e.stopPropagation();
     setNewRequest({...newRequest, receiptImage: ''});
-    // Reset file input value so the same file can be re-selected
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -75,12 +74,35 @@ const ProductRequests = ({ user }: { user: User }) => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const updateStatus = (req: ProductRequest, status: RequestStatus) => {
-    db.updateRequest({ ...req, status });
+  // ADMIN ACTIONS: Edit while approving/rejecting
+  const handleAdminStatusUpdate = (status: RequestStatus) => {
+    if (!viewRequest) return;
+    const finalRequest = { ...viewRequest, status };
+    db.updateRequest(finalRequest);
     setRequests(db.getRequests());
-    if (viewRequest?.id === req.id) {
-        setViewRequest({ ...req, status });
+    setViewRequest(null);
+  };
+
+  const handleUpdateViewItem = (idx: number, field: keyof ProductRequestItem, val: any) => {
+    if (!viewRequest) return;
+    const items = viewRequest.items ? [...viewRequest.items] : [];
+    if (items[idx]) {
+      items[idx] = { ...items[idx], [field]: val };
     }
+    setViewRequest({ ...viewRequest, items });
+  };
+
+  const handleAddViewItem = () => {
+    if (!viewRequest) return;
+    const items = viewRequest.items ? [...viewRequest.items] : [];
+    items.push({ description: '', quantity: 1, unit: 'pcs' });
+    setViewRequest({ ...viewRequest, items });
+  };
+
+  const handleRemoveViewItem = (idx: number) => {
+    if (!viewRequest) return;
+    const items = viewRequest.items ? viewRequest.items.filter((_, i) => i !== idx) : [];
+    setViewRequest({ ...viewRequest, items });
   };
 
   return (
@@ -103,7 +125,7 @@ const ProductRequests = ({ user }: { user: User }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredRequests.map(req => (
           <div key={req.id} 
-               onClick={() => setViewRequest(req)}
+               onClick={() => setViewRequest(JSON.parse(JSON.stringify(req)))} // Deep clone for local editing
                className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col group hover:border-primary-200 transition-all cursor-pointer">
             <div className="p-8 flex-1">
               <div className="flex justify-between items-start mb-6">
@@ -181,19 +203,55 @@ const ProductRequests = ({ user }: { user: User }) => {
              <div className="flex-1 overflow-y-auto p-8 custom-scrollbar grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div className="space-y-6">
                     <div>
-                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Items Requested</h3>
-                        <div className="space-y-2">
-                            {viewRequest.items ? (
+                        <div className="flex justify-between items-center mb-4">
+                           <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Items Requested</h3>
+                           {isAdmin && viewRequest.status === RequestStatus.PENDING && (
+                             <button onClick={handleAddViewItem} className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-[9px] font-black uppercase hover:bg-primary/20 transition-all">+ Add Item</button>
+                           )}
+                        </div>
+                        <div className="space-y-3">
+                            {viewRequest.items && viewRequest.items.length > 0 ? (
                                 viewRequest.items.map((item, idx) => (
-                                    <div key={idx} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                        <span className="font-bold text-slate-800">{item.description}</span>
-                                        <span className="font-black text-primary text-sm">{item.quantity} {item.unit}</span>
+                                    <div key={idx} className="flex gap-2 items-center">
+                                        {isAdmin && viewRequest.status === RequestStatus.PENDING ? (
+                                          <>
+                                            <input 
+                                              className="flex-[3] bg-slate-50 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-primary-100"
+                                              value={item.description}
+                                              onChange={e => handleUpdateViewItem(idx, 'description', e.target.value)}
+                                            />
+                                            <input 
+                                              type="number"
+                                              className="flex-1 bg-slate-50 border-none rounded-xl px-2 py-3 text-xs font-black text-center outline-none"
+                                              value={item.quantity}
+                                              onChange={e => handleUpdateViewItem(idx, 'quantity', Number(e.target.value))}
+                                            />
+                                            <select 
+                                              className="flex-1 bg-slate-50 border-none rounded-xl px-2 py-3 text-[9px] font-black outline-none uppercase"
+                                              value={item.unit}
+                                              onChange={e => handleUpdateViewItem(idx, 'unit', e.target.value)}
+                                            >
+                                              {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                                            </select>
+                                            <button onClick={() => handleRemoveViewItem(idx)} className="p-2 text-rose-300 hover:text-rose-500"><Trash2 size={16} /></button>
+                                          </>
+                                        ) : (
+                                          <div className="w-full flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                              <span className="font-bold text-slate-800">{item.description}</span>
+                                              <span className="font-black text-primary text-sm">{item.quantity} {item.unit}</span>
+                                          </div>
+                                        )}
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-xs font-bold text-slate-400 italic bg-slate-50 p-6 rounded-2xl border border-dashed border-slate-200">
-                                    No itemized list provided. Refer to snapshot.
-                                </p>
+                                <div className="space-y-4">
+                                  <p className="text-xs font-bold text-slate-400 italic bg-slate-50 p-6 rounded-2xl border border-dashed border-slate-200">
+                                      No itemized list provided. Refer to snapshot.
+                                  </p>
+                                  {isAdmin && viewRequest.status === RequestStatus.PENDING && (
+                                    <button onClick={handleAddViewItem} className="w-full py-4 border-2 border-dashed border-primary/20 text-primary rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 transition-all">+ Itemize Manually to Fulfill</button>
+                                  )}
+                                </div>
                             )}
                         </div>
                     </div>
@@ -231,14 +289,15 @@ const ProductRequests = ({ user }: { user: User }) => {
 
              {isAdmin && viewRequest.status === RequestStatus.PENDING && (
                 <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-4 shrink-0">
-                    <button onClick={() => updateStatus(viewRequest, RequestStatus.REJECTED)} className="flex-1 py-4 bg-white text-rose-500 border border-rose-100 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">Reject Request</button>
-                    <button onClick={() => updateStatus(viewRequest, RequestStatus.APPROVED)} className="flex-1 py-4 bg-primary text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary-700 transition-all">Approve Supply</button>
+                    <button onClick={() => handleAdminStatusUpdate(RequestStatus.REJECTED)} className="flex-1 py-4 bg-white text-rose-500 border border-rose-100 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">Reject Request</button>
+                    <button onClick={() => handleAdminStatusUpdate(RequestStatus.APPROVED)} className="flex-1 py-4 bg-primary text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary-700 transition-all">Approve Supply</button>
                 </div>
              )}
 
              {viewRequest.status !== RequestStatus.PENDING && (
-                <div className="p-8 bg-slate-50 border-t border-slate-100 flex justify-center shrink-0">
+                <div className="p-8 bg-slate-50 border-t border-slate-100 flex flex-col items-center justify-center shrink-0">
                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest">This request was {viewRequest.status.toLowerCase()} on {viewRequest.date}</p>
+                    <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-1">Updates made during approval are visible to the manager</p>
                 </div>
              )}
           </div>

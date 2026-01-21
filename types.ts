@@ -1,6 +1,7 @@
 
 export enum UserRole {
   ADMIN = 'ADMIN',
+  CENTRAL_ADMIN = 'CENTRAL_ADMIN',
   STORE_MANAGER = 'STORE_MANAGER'
 }
 
@@ -33,6 +34,8 @@ export interface ShiftData {
   cardSales: number;
   cashCounted: number;
   openingFund: number;
+  expectedCash: number;
+  difference: number;
   employeeName: string;
   shiftTime: string;
 }
@@ -41,7 +44,7 @@ export interface Sale {
   id: string;
   date: string;
   storeId: string;
-  amount: number; // This will be the sum of morning and afternoon POS sales
+  amount: number; // Sum of morning and afternoon POS sales
   morningShift: ShiftData;
   afternoonShift: ShiftData;
   receiptImage?: string; // Base64 or URL
@@ -109,4 +112,24 @@ export interface ProductRequest {
   receiptImage?: string; // Image of handwritten list or items
   status: RequestStatus;
   note?: string;
+}
+
+export interface WastageItem {
+  time: string;
+  productId: string;
+  productName: string;
+  reason: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface WastageReport {
+  id: string;
+  date: string;
+  storeId: string;
+  responsible: string;
+  items: WastageItem[];
+  totalWastage: number;
+  receiptImage?: string;
 }

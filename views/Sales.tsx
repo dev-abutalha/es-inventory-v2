@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef } from 'react';
-import { Plus, Edit2, Trash2, X, TrendingUp, Image as ImageIcon, FileText, Check, Clock, User as UserIcon, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, TrendingUp, Image as ImageIcon, FileText, Clock, User as UserIcon, AlertCircle } from 'lucide-react';
 import { format, endOfMonth } from 'date-fns';
 import { db } from '../db';
 import { User, UserRole, Sale, ShiftData } from '../types';
@@ -22,6 +22,8 @@ const Sales = ({ user }: { user: User }) => {
     cardSales: 0,
     cashCounted: 0,
     openingFund: 0,
+    expectedCash: 0,
+    difference: 0,
     employeeName: '',
     shiftTime: ''
   };
@@ -63,12 +65,16 @@ const Sales = ({ user }: { user: User }) => {
   };
 
   const handleSave = () => {
-    const totalPos = (newSale.morningShift?.posSales || 0) + (newSale.afternoonShift?.posSales || 0);
-    if (totalPos > 0 && newSale.storeId) {
+    // Total Sell = Sum of POS Sales + Card Payments for both shifts
+    const mTotal = (newSale.morningShift?.posSales || 0) + (newSale.morningShift?.cardSales || 0);
+    const aTotal = (newSale.afternoonShift?.posSales || 0) + (newSale.afternoonShift?.cardSales || 0);
+    const totalDaily = mTotal + aTotal;
+
+    if (totalDaily > 0 && newSale.storeId) {
       const sale: Sale = { 
         id: editingId || `sale_${Date.now()}`, 
         ...newSale,
-        amount: totalPos 
+        amount: totalDaily 
       };
       if (editingId) db.updateSale(sale);
       else db.addSale(sale);
@@ -97,20 +103,18 @@ const Sales = ({ user }: { user: User }) => {
     });
   };
 
-  // Calculations
-  const mExpected = (newSale.morningShift?.posSales || 0) - (newSale.morningShift?.cardSales || 0);
-  const mDiff = (newSale.morningShift?.cashCounted || 0) - mExpected;
-  const aExpected = (newSale.afternoonShift?.posSales || 0) - (newSale.afternoonShift?.cardSales || 0);
-  const aDiff = (newSale.afternoonShift?.cashCounted || 0) - aExpected;
+  // UI Current Total (Dynamic)
+  const currentTotalDisplay = 
+    (newSale.morningShift?.posSales || 0) + 
+    (newSale.morningShift?.cardSales || 0) + 
+    (newSale.afternoonShift?.posSales || 0) + 
+    (newSale.afternoonShift?.cardSales || 0);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-6">
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">Daily Sales</h1>
-            <p className="text-slate-500 font-medium">Daily Cash Register Records (Shift-based)</p>
-          </div>
+          <p className="text-slate-500 font-medium">Daily Cash Register Records (Shift-based)</p>
           <button 
             onClick={() => { setEditingId(null); setNewSale(initialForm); setModalOpen(true); }}
             className="bg-primary text-white p-3 lg:px-6 lg:py-3 rounded-2xl flex items-center gap-2 font-black shadow-xl shadow-primary/20 active:scale-95 transition-all"
@@ -128,8 +132,8 @@ const Sales = ({ user }: { user: User }) => {
             <tr>
               <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
               <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Store</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Morning POS</th>
-              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Afternoon POS</th>
+              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Morning POS+Card</th>
+              <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Afternoon POS+Card</th>
               <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total Revenue</th>
               <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Actions</th>
             </tr>
@@ -139,8 +143,8 @@ const Sales = ({ user }: { user: User }) => {
               <tr key={sale.id} className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-8 py-5 font-bold text-slate-900">{sale.date}</td>
                 <td className="px-8 py-5 text-slate-600 font-medium">{stores.find(s => s.id === sale.storeId)?.name}</td>
-                <td className="px-8 py-5 font-bold text-slate-500">€{sale.morningShift?.posSales.toLocaleString()}</td>
-                <td className="px-8 py-5 font-bold text-slate-500">€{sale.afternoonShift?.posSales.toLocaleString()}</td>
+                <td className="px-8 py-5 font-bold text-slate-500">€{((sale.morningShift?.posSales || 0) + (sale.morningShift?.cardSales || 0)).toLocaleString()}</td>
+                <td className="px-8 py-5 font-bold text-slate-500">€{((sale.afternoonShift?.posSales || 0) + (sale.afternoonShift?.cardSales || 0)).toLocaleString()}</td>
                 <td className="px-8 py-5 text-right font-black text-slate-900 text-lg">€{sale.amount.toLocaleString()}</td>
                 <td className="px-8 py-5">
                   <div className="flex justify-center gap-2">
@@ -154,7 +158,6 @@ const Sales = ({ user }: { user: User }) => {
         </table>
       </div>
 
-      {/* Mobile Card View */}
       <div className="grid grid-cols-1 gap-4 md:hidden">
         {filteredSales.map(sale => (
           <div key={sale.id} className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm active:bg-slate-50 transition-colors">
@@ -173,7 +176,6 @@ const Sales = ({ user }: { user: User }) => {
         ))}
       </div>
 
-      {/* FOOTER TOTAL */}
       <div className="fixed bottom-20 lg:bottom-0 left-0 right-0 lg:left-72 bg-slate-900 text-white z-40 border-t border-slate-800 p-6 flex items-center justify-between shadow-2xl">
         <div>
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Period Total Revenue</p>
@@ -184,16 +186,15 @@ const Sales = ({ user }: { user: User }) => {
         </div>
       </div>
 
-      {/* MODAL FORM */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden mt-0">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
           <div className="bg-white rounded-t-[3rem] sm:rounded-[3rem] w-full max-w-4xl max-h-[95vh] shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300">
             <div className="p-8 border-b border-slate-100 flex justify-between items-center shrink-0">
               <div className="flex items-center gap-4">
                  <div className="p-3 bg-primary text-white rounded-2xl"><FileText size={24} /></div>
                  <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Cash Register Record</h2>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Casanova Retail Hub • Barcelona</p>
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Daily Cash Record</h2>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Registro de Caja</p>
                  </div>
               </div>
               <button onClick={() => setModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={20} className="text-slate-400" /></button>
@@ -201,7 +202,7 @@ const Sales = ({ user }: { user: User }) => {
 
             <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                <CalendarPicker label="Record Date" value={newSale.date} onChange={v => setNewSale({...newSale, date: v})} />
+                <CalendarPicker label="Date" value={newSale.date} onChange={v => setNewSale({...newSale, date: v})} />
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Store Location</label>
                   <select 
@@ -215,7 +216,6 @@ const Sales = ({ user }: { user: User }) => {
                 </div>
               </div>
 
-              {/* FORM TABLE */}
               <div className="bg-white border border-slate-100 rounded-[2.5rem] shadow-sm overflow-hidden mb-8">
                  <table className="w-full text-left border-collapse">
                     <thead className="bg-slate-50/50">
@@ -226,7 +226,7 @@ const Sales = ({ user }: { user: User }) => {
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                       <tr className="group">
+                       <tr>
                           <td className="px-6 py-5 font-bold text-slate-900">POS Sales (€)</td>
                           <td className="px-4 py-2 border-x border-slate-100">
                              <input type="number" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-center font-black outline-none focus:ring-2 focus:ring-primary-400" value={newSale.morningShift?.posSales || ''} onChange={e => updateShift('morningShift', 'posSales', Number(e.target.value))} />
@@ -236,7 +236,7 @@ const Sales = ({ user }: { user: User }) => {
                           </td>
                        </tr>
                        <tr>
-                          <td className="px-6 py-5 font-bold text-slate-900">Card (€)</td>
+                          <td className="px-6 py-5 font-bold text-slate-900">Card Payment (€)</td>
                           <td className="px-4 py-2 border-x border-slate-100">
                              <input type="number" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-center font-bold text-slate-600 outline-none" value={newSale.morningShift?.cardSales || ''} onChange={e => updateShift('morningShift', 'cardSales', Number(e.target.value))} />
                           </td>
@@ -247,10 +247,10 @@ const Sales = ({ user }: { user: User }) => {
                        <tr>
                           <td className="px-6 py-5 font-bold text-slate-900">Cash Counted (€)</td>
                           <td className="px-4 py-2 border-x border-slate-100">
-                             <input type="number" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-center font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-primary-400" value={newSale.morningShift?.cashCounted || ''} onChange={e => updateShift('morningShift', 'cashCounted', Number(e.target.value))} />
+                             <input type="number" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-center font-bold text-slate-900 outline-none" value={newSale.morningShift?.cashCounted || ''} onChange={e => updateShift('morningShift', 'cashCounted', Number(e.target.value))} />
                           </td>
                           <td className="px-4 py-2">
-                             <input type="number" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-center font-bold text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-400" value={newSale.afternoonShift?.cashCounted || ''} onChange={e => updateShift('afternoonShift', 'cashCounted', Number(e.target.value))} />
+                             <input type="number" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-center font-bold text-slate-900 outline-none" value={newSale.afternoonShift?.cashCounted || ''} onChange={e => updateShift('afternoonShift', 'cashCounted', Number(e.target.value))} />
                           </td>
                        </tr>
                        <tr>
@@ -262,53 +262,53 @@ const Sales = ({ user }: { user: User }) => {
                              <input type="number" className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-center font-bold text-slate-400 outline-none" value={newSale.afternoonShift?.openingFund || ''} onChange={e => updateShift('afternoonShift', 'openingFund', Number(e.target.value))} />
                           </td>
                        </tr>
-                       <tr className="bg-slate-50/50">
-                          <td className="px-6 py-5 font-black text-slate-400 uppercase text-[10px] tracking-widest">Expected Cash (€)</td>
-                          <td className="px-6 py-5 text-center font-black text-slate-900 border-x border-slate-100 bg-primary-50/20">€{mExpected.toFixed(2)}</td>
-                          <td className="px-6 py-5 text-center font-black text-slate-900 bg-indigo-50/20">€{aExpected.toFixed(2)}</td>
-                       </tr>
-                       <tr>
-                          <td className="px-6 py-5 font-black text-slate-400 uppercase text-[10px] tracking-widest">Difference (€)</td>
-                          <td className={`px-6 py-5 text-center font-black border-x border-slate-100 ${mDiff === 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                             €{mDiff.toFixed(2)}
-                             {mDiff !== 0 && <span className="block text-[8px] animate-pulse">Shortage!</span>}
+                       <tr className="bg-slate-50/30">
+                          <td className="px-6 py-5 font-bold text-slate-900">Expected Cash (€)</td>
+                          <td className="px-4 py-2 border-x border-slate-100">
+                             <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-center font-bold text-slate-900 outline-none focus:ring-2 focus:ring-primary-400" placeholder="0.00" value={newSale.morningShift?.expectedCash || ''} onChange={e => updateShift('morningShift', 'expectedCash', Number(e.target.value))} />
                           </td>
-                          <td className={`px-6 py-5 text-center font-black ${aDiff === 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                             €{aDiff.toFixed(2)}
-                             {aDiff !== 0 && <span className="block text-[8px] animate-pulse">Shortage!</span>}
+                          <td className="px-4 py-2">
+                             <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-center font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400" placeholder="0.00" value={newSale.afternoonShift?.expectedCash || ''} onChange={e => updateShift('afternoonShift', 'expectedCash', Number(e.target.value))} />
+                          </td>
+                       </tr>
+                       <tr className="bg-slate-50/30">
+                          <td className="px-6 py-5 font-bold text-slate-900">Difference (€)</td>
+                          <td className="px-4 py-2 border-x border-slate-100">
+                             <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-center font-bold text-slate-900 outline-none focus:ring-2 focus:ring-primary-400" placeholder="0.00" value={newSale.morningShift?.difference || ''} onChange={e => updateShift('morningShift', 'difference', Number(e.target.value))} />
+                          </td>
+                          <td className="px-4 py-2">
+                             <input type="number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-center font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400" placeholder="0.00" value={newSale.afternoonShift?.difference || ''} onChange={e => updateShift('afternoonShift', 'difference', Number(e.target.value))} />
                           </td>
                        </tr>
                     </tbody>
                  </table>
               </div>
 
-              {/* STAFF NAMES / TIMES */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                  <div className="p-6 bg-primary-50/30 rounded-3xl border border-primary-100 space-y-4">
                     <div className="flex items-center gap-2 mb-2"><UserIcon size={16} className="text-primary" /><span className="text-[10px] font-black text-primary uppercase tracking-widest">Morning Employee</span></div>
                     <div className="flex gap-3">
-                       <input className="flex-[2] bg-white border border-primary-100 rounded-xl px-4 py-2 text-sm font-bold outline-none" placeholder="Staff Name" value={newSale.morningShift?.employeeName} onChange={e => updateShift('morningShift', 'employeeName', e.target.value)} />
+                       <input className="flex-[2] bg-white border border-primary-100 rounded-xl px-4 py-2 text-sm font-bold outline-none" placeholder="Name" value={newSale.morningShift?.employeeName} onChange={e => updateShift('morningShift', 'employeeName', e.target.value)} />
                        <div className="flex-1 relative">
                           <Clock size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-300" />
-                          <input className="w-full bg-white border border-primary-100 rounded-xl pl-8 pr-3 py-2 text-[10px] font-black outline-none" placeholder="15:00" value={newSale.morningShift?.shiftTime} onChange={e => updateShift('morningShift', 'shiftTime', e.target.value)} />
+                          <input className="w-full bg-white border border-primary-100 rounded-xl pl-8 pr-3 py-2 text-[10px] font-black outline-none" placeholder="Time" value={newSale.morningShift?.shiftTime} onChange={e => updateShift('morningShift', 'shiftTime', e.target.value)} />
                        </div>
                     </div>
                  </div>
                  <div className="p-6 bg-indigo-50/30 rounded-3xl border border-indigo-100 space-y-4">
                     <div className="flex items-center gap-2 mb-2"><UserIcon size={16} className="text-indigo-600" /><span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Afternoon Employee</span></div>
                     <div className="flex gap-3">
-                       <input className="flex-[2] bg-white border border-indigo-100 rounded-xl px-4 py-2 text-sm font-bold outline-none" placeholder="Staff Name" value={newSale.afternoonShift?.employeeName} onChange={e => updateShift('afternoonShift', 'employeeName', e.target.value)} />
+                       <input className="flex-[2] bg-white border border-indigo-100 rounded-xl px-4 py-2 text-sm font-bold outline-none" placeholder="Name" value={newSale.afternoonShift?.employeeName} onChange={e => updateShift('afternoonShift', 'employeeName', e.target.value)} />
                        <div className="flex-1 relative">
                           <Clock size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-300" />
-                          <input className="w-full bg-white border border-indigo-100 rounded-xl pl-8 pr-3 py-2 text-[10px] font-black outline-none" placeholder="21:30" value={newSale.afternoonShift?.shiftTime} onChange={e => updateShift('afternoonShift', 'shiftTime', e.target.value)} />
+                          <input className="w-full bg-white border border-indigo-100 rounded-xl pl-8 pr-3 py-2 text-[10px] font-black outline-none" placeholder="Time" value={newSale.afternoonShift?.shiftTime} onChange={e => updateShift('afternoonShift', 'shiftTime', e.target.value)} />
                        </div>
                     </div>
                  </div>
               </div>
 
-              {/* IMAGE UPLOADER */}
               <div className="space-y-4">
-                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Snapshot Proof of Physical Form</h3>
+                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Snapshot of Paper Form</h3>
                  {newSale.receiptImage ? (
                     <div className="relative w-full rounded-[2rem] overflow-hidden border-4 border-slate-100 shadow-lg bg-slate-50 flex items-center justify-center p-4">
                        <img src={newSale.receiptImage} className="max-w-full h-auto max-h-[300px] object-contain rounded-xl" />
@@ -317,7 +317,7 @@ const Sales = ({ user }: { user: User }) => {
                  ) : (
                     <button onClick={() => fileInputRef.current?.click()} className="w-full h-40 border-4 border-dashed border-slate-100 rounded-[2rem] flex flex-col items-center justify-center text-slate-300 hover:border-primary-200 hover:bg-primary-50 hover:text-primary transition-all group">
                        <ImageIcon size={48} className="mb-2 group-hover:scale-110 transition-transform" />
-                       <span className="text-[10px] font-black uppercase tracking-widest">Upload snapshot of physical register</span>
+                       <span className="text-[10px] font-black uppercase tracking-widest">Upload photo of the physical report</span>
                     </button>
                  )}
                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
@@ -326,8 +326,8 @@ const Sales = ({ user }: { user: User }) => {
 
             <div className="p-8 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6 shrink-0">
                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center sm:text-left">Total Daily POS Sales</p>
-                  <p className="text-4xl font-black text-slate-900 tracking-tighter">€{((newSale.morningShift?.posSales || 0) + (newSale.afternoonShift?.posSales || 0)).toLocaleString()}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Daily Revenue (POS + Card Sum)</p>
+                  <p className="text-4xl font-black text-slate-900 tracking-tighter">€{currentTotalDisplay.toLocaleString()}</p>
                </div>
                <div className="flex gap-4 w-full sm:w-auto">
                   <button onClick={() => setModalOpen(false)} className="flex-1 sm:flex-none py-4 px-8 font-black text-slate-400">Cancel</button>

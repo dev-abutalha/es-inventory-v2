@@ -1,5 +1,5 @@
 
-import { Store, Purchase, Sale, Expense, User, UserRole, Product, Stock, StockTransfer, ProductRequest } from './types';
+import { Store, Purchase, Sale, Expense, User, UserRole, Product, Stock, StockTransfer, ProductRequest, WastageReport } from './types';
 
 const INITIAL_STORES: Store[] = [
   { id: 'central', name: 'Central Office', location: 'Barcelona Center' },
@@ -8,7 +8,8 @@ const INITIAL_STORES: Store[] = [
 ];
 
 const INITIAL_USERS: User[] = [
-  { id: 'u_admin', username: 'admin', name: 'Jordi Admin', password: 'password123', role: UserRole.ADMIN },
+  { id: 'u_admin', username: 'admin', name: 'Jordi SuperAdmin', password: 'password123', role: UserRole.ADMIN },
+  { id: 'u_central', username: 'central', name: 'Marc Central', password: 'password123', role: UserRole.CENTRAL_ADMIN },
   { id: 'u_mgr1', username: 'maria', name: 'Maria Manager', password: 'password123', role: UserRole.STORE_MANAGER, assignedStoreId: 'st_001' },
 ];
 
@@ -23,7 +24,8 @@ const STORAGE_KEYS = {
   STOCK: 'rf_stock',
   REPORT_SETTINGS: 'rf_report_settings',
   TRANSFERS: 'rf_transfers',
-  REQUESTS: 'rf_requests'
+  REQUESTS: 'rf_requests',
+  WASTAGE: 'rf_wastage'
 };
 
 export const db = {
@@ -162,6 +164,20 @@ export const db = {
   updateRequest(req: ProductRequest) {
     const requests = this.getRequests().map(r => r.id === req.id ? req : r);
     this.save(STORAGE_KEYS.REQUESTS, requests);
+  },
+
+  getWastage(): WastageReport[] { return this.load(STORAGE_KEYS.WASTAGE, [] as WastageReport[]); },
+  addWastage(report: WastageReport) {
+    const list = this.getWastage();
+    this.save(STORAGE_KEYS.WASTAGE, [...list, report]);
+    // Optionally deduct stock here if desired
+    report.items.forEach(item => {
+      if (item.productId) this.updateStock(item.productId, report.storeId, -item.quantity);
+    });
+  },
+  deleteWastage(id: string) {
+    const list = this.getWastage().filter(r => r.id !== id);
+    this.save(STORAGE_KEYS.WASTAGE, list);
   },
 
   getReportSettings() { return this.load(STORAGE_KEYS.REPORT_SETTINGS, { recipients: 'jordi@retailflow.com' }); },
