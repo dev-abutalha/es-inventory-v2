@@ -13,7 +13,8 @@ import {
   MoreHorizontal,
   PackageCheck,
   ClipboardList,
-  Trash2
+  Trash2,
+  Package
 } from 'lucide-react';
 import { db } from './db';
 import { User, UserRole } from './types';
@@ -30,6 +31,7 @@ import Login from './views/Login';
 import Assignment from './views/Assignment';
 import ProductRequests from './views/ProductRequests';
 import Wastage from './views/Wastage';
+import StockManagement from './views/StockManagement';
 
 const NavItem = ({ to, icon: Icon, label, active, onClick }: any) => (
   <Link
@@ -85,7 +87,6 @@ const Sidebar = ({ isOpen, setOpen, user, onLogout }: any) => {
             
             <div className="mt-6 mb-2 px-4 text-[10px] font-black text-slate-300 uppercase tracking-widest">Operations</div>
             
-            {/* Sales restricted to SuperAdmin and Managers (Central admin logistics only) */}
             {(isSuperAdmin || user.role === UserRole.STORE_MANAGER) && (
               <NavItem to="/sales" icon={ShoppingCart} label="Sales" active={location.pathname === '/sales'} onClick={() => setOpen(false)} />
             )}
@@ -101,6 +102,7 @@ const Sidebar = ({ isOpen, setOpen, user, onLogout }: any) => {
               <>
                 <div className="mt-8 mb-2 px-4 text-[10px] font-black text-slate-300 uppercase tracking-widest">Logistics Hub</div>
                 <NavItem to="/assignment" icon={PackageCheck} label="Assign to Store" active={location.pathname === '/assignment'} onClick={() => setOpen(false)} />
+                <NavItem to="/stock" icon={Package} label="Stock Management" active={location.pathname === '/stock'} onClick={() => setOpen(false)} />
                 <NavItem to="/stores" icon={Store} label="Store Locations" active={location.pathname === '/stores'} onClick={() => setOpen(false)} />
                 <NavItem to="/users" icon={UsersIcon} label="Staff Directory" active={location.pathname === '/users'} onClick={() => setOpen(false)} />
               </>
@@ -121,6 +123,7 @@ const Sidebar = ({ isOpen, setOpen, user, onLogout }: any) => {
 
           <div className="mt-auto pt-6 border-t border-slate-50">
             <button 
+              /* Fixed: Changed handleLogout to correctly use the onLogout prop passed from AppContent */
               onClick={onLogout}
               className="flex items-center gap-3 px-4 py-3 rounded-xl w-full text-slate-400 hover:bg-rose-50 hover:text-rose-600 font-bold transition-all duration-200"
             >
@@ -219,6 +222,10 @@ const AppContent = () => {
             <Route 
               path="/assignment" 
               element={isAnyAdmin ? <Assignment user={user} /> : <Navigate to="/" replace />} 
+            />
+            <Route 
+              path="/stock" 
+              element={isAnyAdmin ? <StockManagement user={user} /> : <Navigate to="/" replace />} 
             />
             <Route path="/requests" element={<ProductRequests user={user} />} />
             <Route path="/wastage" element={<Wastage user={user} />} />

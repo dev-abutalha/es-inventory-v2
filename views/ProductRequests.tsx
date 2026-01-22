@@ -1,6 +1,21 @@
 
 import React, { useState, useMemo, useRef } from 'react';
-import { ClipboardList, Plus, Image as ImageIcon, X, Check, FileText, AlertCircle, Trash2, Camera, List, Maximize2, Search } from 'lucide-react';
+import { 
+  ClipboardList, 
+  Plus, 
+  Image as ImageIcon, 
+  X, 
+  Check, 
+  FileText, 
+  AlertCircle, 
+  Trash2, 
+  Camera, 
+  List, 
+  Maximize2, 
+  Search,
+  Printer,
+  Download
+} from 'lucide-react';
 import { db } from '../db';
 import { User, UserRole, RequestStatus, ProductRequest, ProductRequestItem } from '../types';
 
@@ -13,7 +28,7 @@ const ProductRequests = ({ user }: { user: User }) => {
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [requestMode, setRequestMode] = useState<'list' | 'image'>('list');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const isAdmin = user.role === UserRole.ADMIN;
+  const isAdmin = user.role === UserRole.ADMIN || user.role === UserRole.CENTRAL_ADMIN;
   const stores = db.getStores();
 
   const [newRequest, setNewRequest] = useState({
@@ -103,6 +118,111 @@ const ProductRequests = ({ user }: { user: User }) => {
     if (!viewRequest) return;
     const items = viewRequest.items ? viewRequest.items.filter((_, i) => i !== idx) : [];
     setViewRequest({ ...viewRequest, items });
+  };
+
+  const handlePrintRequest = () => {
+    if (!viewRequest) return;
+    const storeName = stores.find(s => s.id === viewRequest.storeId)?.name || 'Unknown Store';
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const itemsHtml = viewRequest.items?.map(item => `
+      <tr>
+        <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold;">${item.description}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center; font-weight: 900;">${item.quantity}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center; text-transform: uppercase; font-size: 10px;">${item.unit}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center; width: 40px;"><div style="width: 24px; height: 24px; border: 2px solid #333; margin: auto; border-radius: 4px;"></div></td>
+      </tr>
+    `).join('') || '<tr><td colspan="4" style="padding: 30px; text-align: center; color: #999; font-style: italic;">No itemized list provided for this request.</td></tr>';
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Supply Order - ${storeName}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+            body { font-family: 'Inter', sans-serif; color: #000; padding: 40px; line-height: 1.4; }
+            .header { border-bottom: 4px solid #399535; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+            .title { font-size: 28px; font-weight: 900; margin: 0; text-transform: uppercase; letter-spacing: -1px; }
+            .meta { font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+            th { background: #f0f0f0; padding: 12px; text-align: left; font-size: 10px; font-weight: 900; text-transform: uppercase; color: #000; border: 1px solid #ddd; }
+            td { border: 1px solid #ddd; }
+            .footer { margin-top: 60px; display: flex; justify-content: space-between; gap: 40px; }
+            .sig-box { flex: 1; border-top: 2px solid #000; padding-top: 10px; }
+            .sig-label { font-size: 9px; font-weight: 900; text-transform: uppercase; color: #666; }
+            .note-box { margin-top: 30px; padding: 20px; border: 1px solid #eee; border-left: 5px solid #399535; font-size: 12px; }
+            @media print { .no-print { display: none; } button { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <h1 class="title">Supply Pick List</h1>
+              <div class="meta">Order ID: ${viewRequest.id} | Generated: ${new Date().toLocaleString()}</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 900; font-size: 18px;">${storeName}</div>
+              <div class="meta">Store Destination</div>
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 30px; display: flex; justify-content: space-between;">
+             <div>
+               <div class="meta">Request Date</div>
+               <div style="font-weight: 700;">${viewRequest.date}</div>
+             </div>
+             <div style="text-align: right;">
+               <div class="meta">Status</div>
+               <div style="font-weight: 700; color: #399535;">${viewRequest.status}</div>
+             </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50%;">Product Description</th>
+                <th style="text-align: center; width: 15%;">Quantity</th>
+                <th style="text-align: center; width: 15%;">Unit</th>
+                <th style="text-align: center; width: 20%;">Picked [✓]</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+
+          ${viewRequest.note ? `
+            <div class="note-box">
+              <strong style="text-transform: uppercase; font-size: 10px; margin-bottom: 8px; display: block;">Manager Notes:</strong>
+              ${viewRequest.note}
+            </div>
+          ` : ''}
+
+          <div class="footer">
+            <div class="sig-box">
+              <div style="height: 40px;"></div>
+              <div class="sig-label">Warehouse Dispatch Signature & Date</div>
+            </div>
+            <div class="sig-box">
+              <div style="height: 40px;"></div>
+              <div class="sig-label">Store Receiving Signature & Date</div>
+            </div>
+          </div>
+
+          <script>
+            window.onload = function() { 
+              setTimeout(() => {
+                window.print(); 
+                window.close(); 
+              }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   return (
@@ -287,12 +407,42 @@ const ProductRequests = ({ user }: { user: User }) => {
                 </div>
              </div>
 
-             {isAdmin && viewRequest.status === RequestStatus.PENDING && (
-                <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-4 shrink-0">
-                    <button onClick={() => handleAdminStatusUpdate(RequestStatus.REJECTED)} className="flex-1 py-4 bg-white text-rose-500 border border-rose-100 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">Reject Request</button>
-                    <button onClick={() => handleAdminStatusUpdate(RequestStatus.APPROVED)} className="flex-1 py-4 bg-primary text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary-700 transition-all">Approve Supply</button>
-                </div>
-             )}
+             <div className="p-8 bg-slate-50 border-t border-slate-100 space-y-4 shrink-0">
+                {isAdmin && (
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={handlePrintRequest} 
+                      className="flex-1 py-4 bg-white text-slate-900 border border-slate-200 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Printer size={18} /> Print Pick List / PDF
+                    </button>
+                    <button 
+                      className="flex-1 py-4 bg-white text-slate-900 border border-slate-200 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                      onClick={() => {
+                        const csv = [
+                          ["Description", "Quantity", "Unit"],
+                          ...(viewRequest.items?.map(i => [i.description, i.quantity, i.unit]) || [])
+                        ].map(r => r.join(",")).join("\n");
+                        const blob = new Blob([csv], { type: 'text/csv' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `order_${viewRequest.id}.csv`;
+                        a.click();
+                      }}
+                    >
+                      <Download size={18} /> Export CSV
+                    </button>
+                  </div>
+                )}
+
+                {isAdmin && viewRequest.status === RequestStatus.PENDING && (
+                  <div className="flex gap-4">
+                      <button onClick={() => handleAdminStatusUpdate(RequestStatus.REJECTED)} className="flex-1 py-4 bg-white text-rose-500 border border-rose-100 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all">Reject Request</button>
+                      <button onClick={() => handleAdminStatusUpdate(RequestStatus.APPROVED)} className="flex-[2] py-4 bg-primary text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary-700 transition-all">Approve Supply</button>
+                  </div>
+                )}
+             </div>
 
              {viewRequest.status !== RequestStatus.PENDING && (
                 <div className="p-8 bg-slate-50 border-t border-slate-100 flex flex-col items-center justify-center shrink-0">
