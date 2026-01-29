@@ -1,3 +1,4 @@
+// types.ts (updated version)
 
 export enum UserRole {
   ADMIN = 'ADMIN',
@@ -5,10 +6,17 @@ export enum UserRole {
   STORE_MANAGER = 'STORE_MANAGER'
 }
 
+export enum RequestStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED'
+}
+
 export interface Store {
-  id: string;
+  id: string;           // uuid string
   name: string;
   location: string;
+  created_at?: string;  // optional: timestamptz ISO string from Supabase
 }
 
 export interface PurchaseItem {
@@ -19,14 +27,15 @@ export interface PurchaseItem {
 }
 
 export interface Purchase {
-  id: string;
-  date: string;
+  id: string;                    // uuid
+  date: string;                  // keep as 'YYYY-MM-DD' or change to full ISO if needed
   storeId: string;
   supplier: string;
-  items?: PurchaseItem[]; // Optional if price-only receipt is used
-  receiptImage?: string; // Base64 or URL
+  items?: PurchaseItem[];        // jsonb → keep as array
+  receiptImage?: string;         // base64 or URL
   totalCost: number;
   isQuickEntry?: boolean;
+  created_at?: string;           // add if you want Supabase timestamps
 }
 
 export interface ShiftData {
@@ -42,12 +51,13 @@ export interface ShiftData {
 
 export interface Sale {
   id: string;
-  date: string;
+  date: string;                  // 'YYYY-MM-DD' or full ISO
   storeId: string;
-  amount: number; // Sum of morning and afternoon POS sales
+  amount: number;
   morningShift: ShiftData;
   afternoonShift: ShiftData;
-  receiptImage?: string; // Base64 or URL
+  receiptImage?: string;
+  created_at?: string;           // optional
 }
 
 export interface Expense {
@@ -57,45 +67,44 @@ export interface Expense {
   category: string;
   description: string;
   amount: number;
+  created_at?: string;
 }
 
 export interface User {
-  id: string;
+  id: string;                    // uuid (from auth.users or your table)
   username: string;
   name: string;
-  password?: string;
+  password?: string;             // only if you store it (not recommended with Supabase Auth)
   role: UserRole;
   assignedStoreId?: string;
+  created_at?: string;
 }
 
 export interface Product {
   id: string;
   name: string;
-  unit: string; // e.g. kg, lb, pcs, box
+  unit: string;
   costPrice: number;
   sellingPrice: number;
   minStockLevel: number;
+  created_at?: string;
 }
 
 export interface Stock {
   productId: string;
   storeId: string;
   quantity: number;
+  // no id — composite PK in Supabase
 }
 
 export interface StockTransfer {
   id: string;
-  date: string;
+  date: string;                  // 'YYYY-MM-DD' or ISO
   productId: string;
   quantity: number;
   fromStoreId: string;
   toStoreId: string;
-}
-
-export enum RequestStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED'
+  created_at?: string;
 }
 
 export interface ProductRequestItem {
@@ -109,9 +118,10 @@ export interface ProductRequest {
   date: string;
   storeId: string;
   items?: ProductRequestItem[];
-  receiptImage?: string; // Image of handwritten list or items
+  receiptImage?: string;
   status: RequestStatus;
   note?: string;
+  created_at?: string;
 }
 
 export interface WastageItem {
@@ -132,4 +142,5 @@ export interface WastageReport {
   items: WastageItem[];
   totalWastage: number;
   receiptImage?: string;
+  created_at?: string;
 }

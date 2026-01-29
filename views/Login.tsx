@@ -1,17 +1,16 @@
-
-import React, { useState, useEffect } from 'react';
-import { LogIn, ShieldAlert, Check } from 'lucide-react';
-import { db } from '../db';
+import { Check, LogIn, ShieldAlert } from "lucide-react";
+import { useEffect, useState } from "react";
+import { loginUser } from "../src/services/auth.service";
 
 const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   // Load saved credentials on mount
   useEffect(() => {
-    const saved = localStorage.getItem('rf_remembered_creds');
+    const saved = localStorage.getItem("rf_remembered_creds");
     if (saved) {
       const { u, p } = JSON.parse(saved);
       setUsername(u);
@@ -20,19 +19,31 @@ const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    const user = db.login(username, password);
-    if (user) {
-      if (rememberMe) {
-        localStorage.setItem('rf_remembered_creds', JSON.stringify({ u: username, p: password }));
-      } else {
-        localStorage.removeItem('rf_remembered_creds');
-      }
-      onLoginSuccess();
-    } else {
-      setError('Invalid username or password. Please try again.');
+  // const handleLogin = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   const user = db.login(username, password);
+  //   if (user) {
+  //     if (rememberMe) {
+  //       localStorage.setItem('rf_remembered_creds', JSON.stringify({ u: username, p: password }));
+  //     } else {
+  //       localStorage.removeItem('rf_remembered_creds');
+  //     }
+  //     onLoginSuccess();
+  //   } else {
+  //     setError('Invalid username or password. Please try again.');
+  //   }
+  // };
+
+  const handleLogin = async () => {
+    const user = await loginUser(username, password);
+
+    if (!user) {
+      alert("Invalid credentials");
+      return;
     }
+
+    localStorage.setItem("rf_active_user", JSON.stringify(user));
+    onLoginSuccess();
   };
 
   return (
@@ -42,8 +53,12 @@ const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
           <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-primary shadow-lg">
             <LogIn size={32} />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">RetailFlow Barcelona</h1>
-          <p className="text-primary-100 text-sm mt-1">Store Management Platform</p>
+          <h1 className="text-2xl font-bold text-white tracking-tight">
+            RetailFlow Barcelona
+          </h1>
+          <p className="text-primary-100 text-sm mt-1">
+            Store Management Platform
+          </p>
         </div>
 
         <div className="p-8">
@@ -55,7 +70,9 @@ const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
               </div>
             )}
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">Username</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">
+                Username
+              </label>
               <input
                 type="text"
                 className="w-full bg-white text-slate-900 border border-slate-300 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all placeholder:text-slate-400"
@@ -66,7 +83,9 @@ const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">Password</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wider">
+                Password
+              </label>
               <input
                 type="password"
                 className="w-full bg-white text-slate-900 border border-slate-300 rounded-xl px-4 py-3 outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all placeholder:text-slate-400"
@@ -79,7 +98,9 @@ const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
 
             <div className="flex items-center justify-between py-2">
               <label className="flex items-center gap-2 cursor-pointer group">
-                <div className={`w-5 h-5 rounded border transition-colors flex items-center justify-center ${rememberMe ? 'bg-primary border-primary' : 'bg-white border-slate-300 group-hover:border-primary-400'}`}>
+                <div
+                  className={`w-5 h-5 rounded border transition-colors flex items-center justify-center ${rememberMe ? "bg-primary border-primary" : "bg-white border-slate-300 group-hover:border-primary-400"}`}
+                >
                   {rememberMe && <Check size={14} className="text-white" />}
                 </div>
                 <input
@@ -88,7 +109,9 @@ const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                 />
-                <span className="text-sm font-medium text-slate-600">Remember Me</span>
+                <span className="text-sm font-medium text-slate-600">
+                  Remember Me
+                </span>
               </label>
             </div>
 
@@ -102,8 +125,8 @@ const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
 
           <div className="mt-8 pt-6 border-t border-slate-100 text-center">
             <p className="text-slate-400 text-xs">
-              Protected by RetailFlow Enterprise Security<br />
-              © 2025 RetailFlow Barcelona
+              Protected by RetailFlow Enterprise Security
+              <br />© 2025 RetailFlow Barcelona
             </p>
           </div>
         </div>

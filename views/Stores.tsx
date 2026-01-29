@@ -1,18 +1,50 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Store, Plus, MapPin, X, Trash2, Edit2, UserCircle } from 'lucide-react';
-import { db } from '../db';
+import { 
+  getStores, 
+  addStore, 
+  updateStore, 
+  deleteStore 
+} from '../src/services/stores.service';
+import { 
+  getUsers, 
+  assignManagerToStore 
+} from '../src/services/users.service';
 import { User, Store as StoreType, UserRole } from '../types';
 
 const Stores = ({ user }: { user: User }) => {
-  const [stores, setStores] = useState(db.getStores());
-  const [users, setUsers] = useState(db.getUsers());
+  const [stores, setStores] = useState<StoreType[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<StoreType | null>(null);
   const [newStore, setNewStore] = useState({ name: '', location: '', managerId: '' });
 
   const isAdmin = user.role === UserRole.ADMIN;
   const managers = users.filter(u => u.role === UserRole.STORE_MANAGER);
+
+  // Load data once
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [storesData, usersData] = await Promise.all([
+          getStores(),
+          getUsers(),
+        ]);
+        setStores(storesData);
+        setUsers(usersData);
+      } catch (err: any) {
+        setErrorMsg(err.message || 'Failed to load stores/users');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const handleOpenAdd = () => {
     setEditingStore(null);
@@ -31,59 +63,74 @@ const Stores = ({ user }: { user: User }) => {
     setModalOpen(true);
   };
 
-  const handleDeleteStore = (id: string) => {
+  const handleDeleteStore = async (id: string) => {
     if (id === 'central') {
       alert("Cannot delete Central Office.");
       return;
     }
-    if (window.confirm("Are you sure you want to delete this store? All associated data will remain but the store identity will be removed.")) {
-      db.deleteStore(id);
-      setStores(db.getStores());
-      setUsers(db.getUsers());
+    if (!window.confirm("Are you sure you want to delete this store?")) return;
+
+    try {
+      await deleteStore(id);
+      setStores(await getStores());
+      // Optional: refresh users if needed
+      setUsers(await getUsers());
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete store');
     }
   };
 
-  const handleSaveStore = () => {
-    if (!newStore.name) return;
-
-    let storeId = '';
-    if (editingStore) {
-      storeId = editingStore.id;
-      db.updateStore({
-        ...editingStore,
-        name: newStore.name,
-        location: newStore.location
-      });
-    } else {
-      storeId = `st_${Date.now()}`;
-      db.addStore({
-        id: storeId,
-        name: newStore.name,
-        location: newStore.location
-      });
+  const handleSaveStore = async () => {
+    if (!newStore.name.trim()) {
+      alert('Store name is required');
+      return;
     }
 
-    // Handle Manager Assignment
-    // 1. Unassign current manager of this store
-    const oldUsers = db.getUsers().map(u => 
-      u.assignedStoreId === storeId ? { ...u, assignedStoreId: undefined } : u
-    );
-    
-    // 2. Assign the new manager if selected
-    const finalUsers = oldUsers.map(u => 
-      u.id === newStore.managerId ? { ...u, assignedStoreId: storeId } : u
-    );
+    try {
+      let storeId: string;
 
-    db.save('rf_users', finalUsers);
-    
-    setStores(db.getStores());
-    setUsers(db.getUsers());
-    setModalOpen(false);
+      if (editingStore) {
+        storeId = editingStore.id;
+        await updateStore({
+          ...editingStore,
+          name: newStore.name,
+          location: newStore.location,
+        });
+      } else {
+        const newStoreData = {
+          name: newStore.name,
+          location: newStore.location,
+        };
+        const created = await addStore(newStoreData);
+        storeId = created.id;
+      }
+
+      // Handle manager assignment
+      await assignManagerToStore(
+        newStore.managerId || null,
+        storeId
+      );
+
+      // Refresh data
+      setStores(await getStores());
+      setUsers(await getUsers());
+      setModalOpen(false);
+    } catch (err: any) {
+      alert(err.message || 'Failed to save store');
+    }
   };
 
   const getStoreManager = (storeId: string) => {
     return users.find(u => u.assignedStoreId === storeId && u.role === UserRole.STORE_MANAGER);
   };
+
+  if (loading) {
+    return <div className="p-8 text-center text-slate-500">Loading stores...</div>;
+  }
+
+  if (errorMsg) {
+    return <div className="p-8 text-center text-rose-600">{errorMsg}</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -106,7 +153,10 @@ const Stores = ({ user }: { user: User }) => {
         {stores.map(store => {
           const manager = getStoreManager(store.id);
           return (
-            <div key={store.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:border-primary-200 transition-all flex flex-col group relative">
+            <div 
+              key={store.id} 
+              className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:border-primary-200 transition-all flex flex-col group relative"
+            >
               <div className="flex items-center gap-4 mb-4">
                 <div className="p-3 rounded-xl bg-primary-50 text-primary-600">
                   <Store size={24} />
@@ -160,8 +210,12 @@ const Stores = ({ user }: { user: User }) => {
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-slate-900">{editingStore ? 'Edit Store Details' : 'Add New Store'}</h2>
-              <button onClick={() => setModalOpen(false)}><X size={20} className="text-slate-400" /></button>
+              <h2 className="text-xl font-bold text-slate-900">
+                {editingStore ? 'Edit Store Details' : 'Add New Store'}
+              </h2>
+              <button onClick={() => setModalOpen(false)}>
+                <X size={20} className="text-slate-400" />
+              </button>
             </div>
             <div className="p-6 space-y-4">
               <div>
@@ -193,17 +247,30 @@ const Stores = ({ user }: { user: User }) => {
                     <option value="">No Manager Assigned</option>
                     {managers.map(m => (
                       <option key={m.id} value={m.id}>
-                        {m.name} {m.assignedStoreId && m.assignedStoreId !== editingStore?.id ? `(Current: ${stores.find(s => s.id === m.assignedStoreId)?.name})` : ''}
+                        {m.name}
+                        {m.assignedStoreId && m.assignedStoreId !== editingStore?.id 
+                          ? ` (Current: ${stores.find(s => s.id === m.assignedStoreId)?.name})` 
+                          : ''}
                       </option>
                     ))}
                   </select>
-                  <p className="mt-1 text-[10px] text-slate-400 italic">Assigning a manager will remove them from their previous store.</p>
+                  <p className="mt-1 text-[10px] text-slate-400 italic">
+                    Assigning a manager will remove them from their previous store.
+                  </p>
                 </div>
               )}
             </div>
             <div className="p-6 bg-slate-50 flex gap-3">
-              <button onClick={() => setModalOpen(false)} className="flex-1 py-2 font-bold text-slate-600 hover:text-slate-800 transition-colors">Cancel</button>
-              <button onClick={handleSaveStore} className="flex-1 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary-700 transition-colors">
+              <button 
+                onClick={() => setModalOpen(false)} 
+                className="flex-1 py-2 font-bold text-slate-600 hover:text-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveStore} 
+                className="flex-1 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary-700 transition-colors"
+              >
                 {editingStore ? 'Update Store' : 'Create Store'}
               </button>
             </div>
