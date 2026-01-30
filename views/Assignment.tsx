@@ -18,7 +18,17 @@ import {
   AlertCircle,
   Edit3
 } from 'lucide-react';
-import { db } from '../db';
+
+import {
+  getProducts,
+  getStores,
+  getStock,
+  createProduct,
+  adjustStock,
+  createTransfer,
+} from "../src/services/assignment.service";
+
+
 import { Product, Store as StoreType, User, UserRole } from '../types';
 
 const UNIT_OPTIONS = ['pcs', 'kg', 'lb', 'box', 'pack', 'liter', 'meter'];
@@ -35,9 +45,12 @@ interface MatrixRow {
 }
 
 const Assignment = ({ user }: { user: User }) => {
-  const [products, setProducts] = useState(db.getProducts());
-  const [stores, setStores] = useState(db.getStores().filter(s => s.id !== 'central'));
-  const [stock, setStock] = useState(db.getStock());
+
+const [products, setProducts] = useState<Product[]>([]);
+const [stores, setStores] = useState<StoreType[]>([]);
+const [stock, setStock] = useState<any[]>([]);
+
+
   const [isModalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -52,13 +65,18 @@ const Assignment = ({ user }: { user: User }) => {
   const isAnyAdmin = user.role === UserRole.ADMIN || user.role === UserRole.CENTRAL_ADMIN;
 
   useEffect(() => {
-    setProducts(db.getProducts());
-    setStock(db.getStock());
-  }, [isModalOpen]);
+    (async () => {
+      setProducts(await getProducts());
+      setStores((await getStores()).filter(s => s.code !== "central"));
+      setStock(await getStock());
+    })();
+  }, []);
 
-  const getStockFor = (productId: string, storeId: string) => {
-    return stock.find(s => s.productId === productId && s.storeId === storeId)?.quantity || 0;
-  };
+  const getStockFor = (productId: string, storeId: string) =>
+    stock.find(
+      s => s.product_id === productId && s.store_id === storeId
+    )?.quantity || 0;
+
 
   const createEmptyRow = (): MatrixRow => ({
     id: `row_${Math.random().toString(36).substr(2, 9)}`,
@@ -110,44 +128,56 @@ const Assignment = ({ user }: { user: User }) => {
     setActiveSearchIdx(null);
   };
 
-  const handleFinishAssignment = () => {
-    matrix.forEach(row => {
-      if (!row.name) return;
 
-      let finalProductId = row.productId;
-      if (!finalProductId) {
-        finalProductId = `p_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-        db.addProduct({ 
-          id: finalProductId, 
-          name: row.name, 
-          unit: row.unit, 
-          costPrice: row.costPrice || 0, 
-          sellingPrice: row.sellingPrice || 0, 
-          minStockLevel: 5 
+
+
+  const handleFinishAssignment = async () => {
+    for (const row of matrix) {
+      if (!row.name) continue;
+
+      let productId = row.productId;
+
+      // NEW PRODUCT
+      if (!productId) {
+        const newProduct = await createProduct({
+          name: row.name,
+          unit: row.unit,
+          costPrice: row.costPrice,
+          sellingPrice: row.sellingPrice,
+          minStockLevel: 5,
         });
+        productId = newProduct.id;
       }
 
+      // HUB STOCK
       if (row.incomingQty > 0) {
-        db.updateStock(finalProductId, 'central', row.incomingQty);
+        await adjustStock(productId!, "central", row.incomingQty);
       }
-      
-      (Object.entries(row.distribution) as [string, number][]).forEach(([storeId, qty]) => {
+
+      // DISTRIBUTION
+      for (const [storeId, qty] of Object.entries(row.distribution)) {
         if (qty > 0) {
-          db.addTransfer({
-            id: `tr_${Date.now()}_${storeId}_${finalProductId}`,
-            date: new Date().toISOString().split('T')[0],
-            productId: finalProductId!,
+          await adjustStock(productId!, "central", -qty);
+          await adjustStock(productId!, storeId, qty);
+
+          await createTransfer({
+            productId: productId!,
             quantity: qty,
-            fromStoreId: 'central',
-            toStoreId: storeId
+            fromStoreId: "central",
+            toStoreId: storeId,
           });
         }
-      });
-    });
-    setStock(db.getStock());
-    setProducts(db.getProducts());
+      }
+    }
+
+    setProducts(await getProducts());
+    setStock(await getStock());
     setModalOpen(false);
   };
+
+
+
+
 
   const startEditing = (p: Product) => {
     const currentValues: Record<string, number> = {};

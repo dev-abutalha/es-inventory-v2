@@ -1,12 +1,14 @@
 import { Check, LogIn, ShieldAlert } from "lucide-react";
-import { useEffect, useState } from "react";
+import { React, useEffect, useState } from "react";
 import { loginUser } from "../src/services/auth.service";
+
 
 const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Load saved credentials on mount
   useEffect(() => {
@@ -19,33 +21,30 @@ const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
     }
   }, []);
 
-  // const handleLogin = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   const user = db.login(username, password);
-  //   if (user) {
-  //     if (rememberMe) {
-  //       localStorage.setItem('rf_remembered_creds', JSON.stringify({ u: username, p: password }));
-  //     } else {
-  //       localStorage.removeItem('rf_remembered_creds');
-  //     }
-  //     onLoginSuccess();
-  //   } else {
-  //     setError('Invalid username or password. Please try again.');
-  //   }
-  // };
+  
 
-  const handleLogin = async () => {
+  const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
+
+  try {
     const user = await loginUser(username, password);
 
     if (!user) {
-      alert("Invalid credentials");
+      setError("Invalid username or password");
       return;
     }
 
     localStorage.setItem("rf_active_user", JSON.stringify(user));
     onLoginSuccess();
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
+
+  
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
@@ -115,12 +114,46 @@ const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
               </label>
             </div>
 
-            <button
-              type="submit"
-              className="w-full py-4 bg-primary text-white rounded-xl font-bold text-lg hover:bg-primary-700 active:scale-95 transition-all shadow-lg shadow-primary-100"
-            >
-              Sign In
-            </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-lg
+              ${
+                loading
+                  ? "bg-primary-400 cursor-not-allowed"
+                  : "bg-primary hover:bg-primary-700 active:scale-95"
+              }
+              text-white`}
+          >
+            {loading ? (
+              <span className="flex items-center justify-center gap-3">
+                <svg
+                  className="h-5 w-5 animate-spin text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  />
+                </svg>
+                Signing in...
+              </span>
+            ) : (
+              "Sign In"
+            )}
+          </button>
+
           </form>
 
           <div className="mt-8 pt-6 border-t border-slate-100 text-center">

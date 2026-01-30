@@ -1,8 +1,20 @@
 {
   "name": "retailflow-multi-store-manager",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
+  "description": "<div align=\"center\">\r <img width=\"1200\" height=\"475\" alt=\"GHBanner\" src=\"https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6\" />\r </div>",
+  "homepage": "https://github.com/dev-abutalha/es-inventory-v2#readme",
+  "bugs": {
+    "url": "https://github.com/dev-abutalha/es-inventory-v2/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dev-abutalha/es-inventory-v2.git"
+  },
+  "license": "ISC",
+  "author": "",
   "type": "module",
+  "main": "index.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -14,6 +26,7 @@
     "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "react-is": "^19.2.4",
     "react-router-dom": "^7.12.0",
     "recharts": "^3.6.0"
   },

@@ -32,51 +32,34 @@ export async function getUsers(): Promise<User[]> {
  * - Creates auth user via signUp
  * - Inserts profile into 'users' table
  */
+
+
+
 export async function createUser(
   userData: Omit<User, 'id'> & { password: string }
 ): Promise<User> {
-  const email = getEmailFromUsername(userData.username);
-
-  // 1. Sign up in Supabase Auth
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email,
-    password: userData.password,
-    options: {
-      data: {
-        username: userData.username,
-        name: userData.name,
-        role: userData.role,
-      },
-    },
-  });
-
-  if (authError) throw new Error(`Auth signup failed: ${authError.message}`);
-  if (!authData.user) throw new Error('No user returned from signup');
-
-  const authUserId = authData.user.id;
-
-  // 2. Insert profile into public.users table
-  const profile: Omit<User, 'id' | 'password'> = {
-    username: userData.username,
-    name: userData.name,
-    role: userData.role,
-    assignedStoreId: userData.assignedStoreId,
-  };
-
-  const { data: inserted, error: insertError } = await supabase
+  const { data, error } = await supabase
     .from('users')
-    .insert({ id: authUserId, ...profile })
+    .insert({
+      username: userData.username,
+      name: userData.name,
+      password: userData.password, // ⚠️ see security note below
+      role: userData.role,
+      assigned_store_id: userData.assignedStoreId || null,
+    })
     .select()
     .single();
 
-  if (insertError) {
-    // Optional: rollback auth user if profile fails (but skip for MVP)
-    console.error('Profile insert failed:', insertError);
-    throw insertError;
+  if (error) {
+    console.error('Error creating user:', error);
+    throw error;
   }
 
-  return inserted as User;
+  return data as User;
 }
+
+
+
 
 /**
  * Update existing user
@@ -89,16 +72,13 @@ export async function updateUser(updatedUser: User): Promise<void> {
     .update({
       name: updatedUser.name,
       role: updatedUser.role,
-      assignedStoreId: updatedUser.assignedStoreId,
-      // username should NOT be updated (it's tied to auth)
+      assigned_store_id: updatedUser.assignedStoreId || null,
     })
     .eq('id', updatedUser.id);
 
-  if (error) {
-    console.error('Error updating user:', error);
-    throw error;
-  }
+  if (error) throw error;
 }
+
 
 /**
  * Delete user
@@ -106,17 +86,12 @@ export async function updateUser(updatedUser: User): Promise<void> {
  * - Optionally disable auth user (we'll delete for simplicity)
  */
 export async function deleteUser(id: string): Promise<void> {
-  // First delete profile
-  const { error: profileError } = await supabase
+  const { error } = await supabase
     .from('users')
     .delete()
     .eq('id', id);
 
-  if (profileError) throw profileError;
-
-  // Optional: disable or delete auth user
-  // Note: Supabase admin API needed for deleteUser — for now, just profile delete
-  // If needed, use supabase.auth.admin.deleteUser(id) but requires service role key
+  if (error) throw error;
 }
 
 
