@@ -49,14 +49,14 @@ const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
         <div className="p-8 text-center bg-primary">
-          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-primary shadow-lg">
-            <LogIn size={32} />
+          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto p-3 mb-4 text-primary shadow-lg">
+            <img src="https://esnaturalbarcelona.com/wp-content/uploads/2025/04/cropped-EsNaturalBCN-favicon-01-192x192.png" alt="" srcset="" />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">
-            RetailFlow Barcelona
+            EsNatural Store Manager
           </h1>
           <p className="text-primary-100 text-sm mt-1">
-            Store Management Platform
+            Multi Store Management Platform
           </p>
         </div>
 
@@ -158,8 +158,8 @@ const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
 
           <div className="mt-8 pt-6 border-t border-slate-100 text-center">
             <p className="text-slate-400 text-xs">
-              Protected by RetailFlow Enterprise Security
-              <br />© 2025 RetailFlow Barcelona
+              Protected by Es Natural Barcelona Enterprise Security
+              <br />© 2026 Es Natural Barcelona
             </p>
           </div>
         </div>

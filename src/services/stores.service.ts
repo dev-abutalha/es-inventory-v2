@@ -15,25 +15,29 @@ export async function getStores(): Promise<StoreType[]> {
   return data || [];
 }
 
-export async function addStore(newStore: Omit<StoreType, 'id'>): Promise<StoreType> {
+// Update addStore to handle the initial status if needed
+export async function addStore(newStore: any): Promise<StoreType> {
   const { data, error } = await supabase
     .from('stores')
-    .insert(newStore)
+    .insert({
+      name: newStore.name,
+      location: newStore.location,
+      is_central: newStore.is_central || false
+    })
     .select()
     .single();
 
   if (error) throw error;
-  if (!data) throw new Error('No store returned after insert');
-
   return data;
 }
 
-export async function updateStore(updatedStore: StoreType): Promise<void> {
+export async function updateStore(updatedStore: StoreType & { is_central?: boolean }): Promise<void> {
   const { error } = await supabase
     .from('stores')
     .update({
       name: updatedStore.name,
       location: updatedStore.location,
+      is_central: updatedStore.is_central
     })
     .eq('id', updatedStore.id);
 

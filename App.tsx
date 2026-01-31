@@ -75,11 +75,7 @@ const Sidebar = ({ isOpen, setOpen, user, onLogout }: any) => {
       <aside className={`fixed top-0 left-0 bottom-0 w-72 bg-white border-r border-slate-100 z-[70] transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-8 flex flex-col h-full">
           <div className="flex items-center gap-3 mb-10 px-2">
-            <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-xl shadow-primary/30">R</div>
-            <div>
-              <h1 className="text-lg font-black text-slate-900 tracking-tight leading-none">RetailFlow</h1>
-              <p className="text-[9px] uppercase font-black text-slate-400 tracking-[0.2em] mt-1">Barcelona Hub</p>
-            </div>
+              <img className="w-[150px] " src="https://esnaturalbarcelona.com/wp-content/uploads/2025/03/logo_esnatural_low.webp" alt="" srcset="" />
           </div>
 
           <nav className="flex flex-col gap-1.5 flex-1 custom-scrollbar overflow-y-auto pr-2">

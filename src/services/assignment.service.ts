@@ -6,28 +6,32 @@ import { Product, Stock, Store, StockTransfer } from "../../types";
 
 export async function getProducts(): Promise<Product[]> {
   const { data, error } = await supabase
-    .from<Product>("products")
+    .from("products")
     .select("*")
     .order("name");
 
   if (error) throw error;
-  return data || [];
+  
+  // Mapping DB columns to CamelCase if necessary
+  return (data || []).map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    unit: p.unit,
+    costPrice: p.cost_price,
+    sellingPrice: p.selling_price,
+    minStockLevel: p.min_stock_level,
+    created_at: p.created_at
+  }));
 }
 
-export async function createProduct(payload: {
-  name: string;
-  unit: string;
-  costPrice: number;
-  sellingPrice: number;
-  minStockLevel?: number;
-}): Promise<Product> {
+export async function createProduct(payload: any): Promise<Product> {
   const { data, error } = await supabase
-    .from<Product>("products")
+    .from("products")
     .insert({
       name: payload.name,
       unit: payload.unit,
-      cost_price: payload.costPrice,       // DB column
-      selling_price: payload.sellingPrice, // DB column
+      cost_price: payload.costPrice,
+      selling_price: payload.sellingPrice,
       min_stock_level: payload.minStockLevel || 5
     })
     .select()
@@ -35,13 +39,9 @@ export async function createProduct(payload: {
 
   if (error) throw error;
   return {
-    id: data!.id,
-    name: data!.name,
-    unit: data!.unit,
-    costPrice: data!.cost_price,
-    sellingPrice: data!.selling_price,
-    minStockLevel: data!.min_stock_level,
-    created_at: data!.created_at
+    ...data,
+    costPrice: data.cost_price,
+    sellingPrice: data.selling_price
   };
 }
 
@@ -49,7 +49,7 @@ export async function createProduct(payload: {
 
 export async function getStock(): Promise<Stock[]> {
   const { data, error } = await supabase
-    .from<Stock>("stock")
+    .from("stock")
     .select("*");
 
   if (error) throw error;
@@ -61,12 +61,13 @@ export async function adjustStock(
   storeId: string,
   qtyDelta: number
 ): Promise<void> {
+  // Use RPC or Upsert for atomic adjustments
   const { data: existing } = await supabase
-    .from<Stock>("stock")
+    .from("stock")
     .select("*")
     .eq("product_id", productId)
     .eq("store_id", storeId)
-    .single();
+    .maybeSingle();
 
   if (existing) {
     await supabase
@@ -85,43 +86,31 @@ export async function adjustStock(
 
 /* ================= TRANSFERS ================= */
 
-export async function createTransfer(payload: {
-  productId: string;
-  quantity: number;
-  fromStoreId: string;
-  toStoreId: string;
-}): Promise<StockTransfer> {
+export const createTransfer = async (transferData: any) => {
   const { data, error } = await supabase
-    .from<StockTransfer>("transfers")
-    .insert({
-      product_id: payload.productId,
-      quantity: payload.quantity,
-      from_store_id: payload.fromStoreId,
-      to_store_id: payload.toStoreId,
-      date: new Date().toISOString().split("T")[0],
-    })
-    .select()
-    .single();
+    .from('stock_transfers') // <-- Change 'transfers' to 'stock_transfers'
+    .insert([
+      {
+        product_id: transferData.productId,
+        quantity: transferData.quantity,
+        from_store_id: transferData.fromStoreId,
+        to_store_id: transferData.toStoreId,
+        status: 'completed', // or whatever your default status is
+        created_at: new Date().toISOString(),
+      },
+    ]);
 
   if (error) throw error;
-
-  return {
-    id: data!.id,
-    date: data!.date,
-    productId: data!.product_id,
-    quantity: data!.quantity,
-    fromStoreId: data!.from_store_id,
-    toStoreId: data!.to_store_id,
-    created_at: data!.created_at,
-  };
-}
+  return data;
+};
 
 /* ================= STORES ================= */
 
 export async function getStores(): Promise<Store[]> {
   const { data, error } = await supabase
-    .from<Store>("stores")
-    .select("*");
+    .from("stores")
+    .select("*") // This will now include id, name, is_central, etc.
+    .order('name');
 
   if (error) throw error;
   return data || [];

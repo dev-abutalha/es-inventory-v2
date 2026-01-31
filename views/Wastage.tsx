@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Plus, 
   Trash2, 
@@ -17,9 +16,11 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { db } from '../db';
+// import { db } from '../db'; // DELETED
 import { User, UserRole, WastageReport, WastageItem, Product } from '../types';
 import CalendarPicker from '../components/CalendarPicker';
+import { wastageService } from '../src/services/wastage.service';
+import { dataService } from '../src/services/dataService.service'; // We'll use this for products/stores
 
 const WASTAGE_REASONS = [
   'Ripe / Rotten', 
@@ -32,17 +33,47 @@ const WASTAGE_REASONS = [
 ];
 
 const Wastage = ({ user }: { user: User }) => {
-  const [reports, setReports] = useState(db.getWastage());
+  // --- State Management ---
+  const [reports, setReports] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [stores, setStores] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const [isModalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [productSearch, setProductSearch] = useState('');
   const [showCatalog, setShowCatalog] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const products = db.getProducts();
-  const stores = db.getStores();
   const isAdmin = user.role === UserRole.ADMIN;
 
+  // --- Initial Data Loading ---
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const storeFilter = isAdmin ? undefined : user.assignedStoreId;
+      
+      const [rData, pData, sData] = await Promise.all([
+        wastageService.getReports(storeFilter),
+        dataService.getProducts(),
+        dataService.getStores()
+      ]);
+      
+      setReports(rData);
+      setProducts(pData);
+      setStores(sData);
+    } catch (err) {
+      console.error("Failed to load Wastage data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [user]);
+
+  // --- Form Logic ---
   const initialItem: WastageItem = {
     time: format(new Date(), 'HH:mm'),
     productId: '',
@@ -55,7 +86,8 @@ const Wastage = ({ user }: { user: User }) => {
 
   const initialForm: Omit<WastageReport, 'id'> = {
     date: format(new Date(), 'yyyy-MM-dd'),
-    storeId: user.assignedStoreId || (stores.find(s => s.id !== 'central')?.id || ''),
+    // Fallback to empty string if stores aren't loaded yet
+    storeId: user.assignedStoreId || '', 
     responsible: user.name,
     items: [{ ...initialItem }],
     totalWastage: 0,
@@ -64,16 +96,24 @@ const Wastage = ({ user }: { user: User }) => {
 
   const [form, setForm] = useState(initialForm);
 
+  // --- Memos & Filters ---
   const filteredReports = useMemo(() => {
-    const list = isAdmin ? reports : reports.filter(r => r.storeId === user.assignedStoreId);
-    return list.sort((a,b) => b.date.localeCompare(a.date));
-  }, [reports, isAdmin, user.assignedStoreId]);
+    // Reports are already filtered by the API call, just sorting here
+    return [...reports].sort((a, b) => b.date.localeCompare(a.date));
+  }, [reports]);
 
   const filteredCatalog = useMemo(() => {
     if (!productSearch) return [];
-    return products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase())).slice(0, 5);
+    return products.filter(p => 
+      p.name.toLowerCase().includes(productSearch.toLowerCase())
+    ).slice(0, 5);
   }, [products, productSearch]);
 
+  const totalCalculated = useMemo(() => 
+    form.items.reduce((acc, i) => acc + i.total, 0), 
+  [form.items]);
+
+  // --- Handlers ---
   const addItem = () => {
     setForm({ ...form, items: [...form.items, { ...initialItem }] });
   };
@@ -87,7 +127,6 @@ const Wastage = ({ user }: { user: User }) => {
     const newItems = [...form.items];
     const item = { ...newItems[idx], [field]: val };
     
-    // Auto-calculate line total
     if (field === 'quantity' || field === 'unitPrice') {
       item.total = Number((item.quantity * item.unitPrice).toFixed(2));
     }
@@ -102,7 +141,7 @@ const Wastage = ({ user }: { user: User }) => {
       ...newItems[idx],
       productId: p.id,
       productName: p.name,
-      unitPrice: p.costPrice // Use cost price for wastage value
+      unitPrice: p.costPrice 
     };
     newItems[idx].total = Number((newItems[idx].quantity * p.costPrice).toFixed(2));
     setForm({ ...form, items: newItems });
@@ -121,27 +160,42 @@ const Wastage = ({ user }: { user: User }) => {
     }
   };
 
-  const handleSave = () => {
-    const total = form.items.reduce((acc, item) => acc + item.total, 0);
-    const report: WastageReport = {
-      id: `w_${Date.now()}`,
-      ...form,
-      totalWastage: total
-    };
-    db.addWastage(report);
-    setReports(db.getWastage());
-    setModalOpen(false);
-    setForm(initialForm);
-  };
-
-  const handleDelete = (id: string) => {
-    if (window.confirm('Delete this wastage log?')) {
-      db.deleteWastage(id);
-      setReports(db.getWastage());
+  const handleSave = async () => {
+    try {
+      const total = form.items.reduce((acc, item) => acc + item.total, 0);
+      await wastageService.createReport({
+        ...form,
+        totalWastage: total
+      });
+      
+      setModalOpen(false);
+      setForm(initialForm);
+      await loadData(); // Refresh list from Supabase
+    } catch (err) {
+      console.error("Save Error:", err);
+      alert("Error saving report to database.");
     }
   };
 
-  const totalCalculated = useMemo(() => form.items.reduce((acc, i) => acc + i.total, 0), [form.items]);
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Delete this wastage log?')) {
+      try {
+        await wastageService.deleteReport(id);
+        await loadData();
+      } catch (err) {
+        alert("Error deleting report.");
+      }
+    }
+  };
+
+if (loading) {
+
+  return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-20">
@@ -173,18 +227,20 @@ const Wastage = ({ user }: { user: User }) => {
                </div>
                <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{report.date}</p>
-                  <h4 className="text-lg font-black text-slate-900 leading-tight">{stores.find(s => s.id === report.storeId)?.name}</h4>
+                  <h4 className="text-lg font-black text-slate-900 leading-tight">
+                    {stores.find(s => s.id === report.storeId)?.name || 'Unknown Store'}
+                  </h4>
                </div>
             </div>
 
             <div className="space-y-2 mb-8">
-               {report.items.slice(0, 3).map((item, i) => (
+               {report.items?.slice(0, 3).map((item: any, i: number) => (
                  <div key={i} className="flex justify-between items-center text-xs font-bold text-slate-600">
                     <span className="truncate max-w-[150px]">{item.productName}</span>
-                    <span className="text-rose-500 font-black">€{item.total.toFixed(2)}</span>
+                    <span className="text-rose-50 font-black px-2 py-0.5 rounded bg-rose-500 text-white">€{item.total.toFixed(2)}</span>
                  </div>
                ))}
-               {report.items.length > 3 && (
+               {report.items?.length > 3 && (
                  <p className="text-[10px] font-black text-slate-300 uppercase">+{report.items.length - 3} more items...</p>
                )}
             </div>
@@ -237,6 +293,7 @@ const Wastage = ({ user }: { user: User }) => {
                         value={form.storeId}
                         onChange={e => setForm({...form, storeId: e.target.value})}
                       >
+                         <option value="">Select Store</option>
                          {stores.filter(s => s.id !== 'central').map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                       </select>
                    </div>
@@ -407,13 +464,13 @@ const Wastage = ({ user }: { user: User }) => {
 
                       <div className="flex items-center gap-4">
                          <div className="flex-1 px-8 py-6 bg-slate-900 text-white rounded-[2.5rem] flex items-center justify-between">
-                            <div>
+                           <div>
                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Daily Loss</p>
                                <p className="text-3xl font-black tracking-tight">€{totalCalculated.toFixed(2)}</p>
-                            </div>
-                            <div className="p-3 bg-rose-500 rounded-2xl shadow-lg shadow-rose-500/20">
+                           </div>
+                           <div className="p-3 bg-rose-500 rounded-2xl shadow-lg shadow-rose-500/20">
                                <TrendingUp size={24} />
-                            </div>
+                           </div>
                          </div>
                       </div>
                    </div>
