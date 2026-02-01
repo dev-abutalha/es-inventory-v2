@@ -30,7 +30,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ from, to, onChange })
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center gap-3 bg-white p-2 rounded-3xl border border-slate-100 shadow-sm w-fit">
+    <div className="w-[100%] flex flex-col sm:flex-row items-center gap-3 bg-white p-2 rounded-3xl border border-slate-100 shadow-sm w-fit">
       <div className="flex items-center gap-1 px-2 border-r border-slate-100 hidden md:flex">
         {presets.map(p => (
           <button
@@ -43,17 +43,17 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ from, to, onChange })
         ))}
       </div>
       
-      <div className="flex items-center gap-3 px-1">
+      <div className="flex items-center m-auto gap-3 px-1 ">
         <CalendarPicker 
           value={from} 
           onChange={(v) => onChange(v, to)} 
-          className="w-[180px]"
+          className=""
         />
         <span className="text-slate-300 font-black">→</span>
         <CalendarPicker 
           value={to} 
           onChange={(v) => onChange(from, v)} 
-          className="w-[180px]"
+          className=""
         />
       </div>
     </div>
