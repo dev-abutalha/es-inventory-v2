@@ -17,7 +17,12 @@ export const wastageService = {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data;
+
+    // Safety: Ensure items is always an array so frontend doesn't crash
+    return (data || []).map(report => ({
+      ...report,
+      items: report.items || []
+    }));
   },
 
   async createReport(reportData: Omit<WastageReport, 'id'>) {
@@ -36,11 +41,11 @@ export const wastageService = {
 
     if (reportError) throw reportError;
 
-    // 2. Prepare Items with the new Report ID
+    // 2. Prepare Items - Ensure we don't send empty strings for IDs
     const itemsToInsert = reportData.items.map(item => ({
-      report_id: report.id, // This matches the DB column
+      report_id: report.id,
       time: item.time,
-      product_id: item.productId,
+      product_id: item.productId || null, // Safety for foreign keys
       product_name: item.productName,
       reason: item.reason,
       quantity: item.quantity,
@@ -54,7 +59,6 @@ export const wastageService = {
       .insert(itemsToInsert);
 
     if (itemsError) throw itemsError;
-
     return report;
   },
 

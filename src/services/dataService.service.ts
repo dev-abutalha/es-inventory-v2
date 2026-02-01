@@ -1,69 +1,36 @@
 import { supabase } from '../../supabaseClient';
-import { Product, Stock } from '../../types';
+import { Product, Store } from '../../types'; // Added Store import
 
 export const dataService = {
-  /**
-   * Fetch all active products
-   */
   async getProducts(): Promise<Product[]> {
     const { data, error } = await supabase
       .from('products')
       .select('*')
       .order('name', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching products:', error);
-      throw error;
-    }
-
+    if (error) throw error;
     return data || [];
   },
 
-  /**
-   * Fetch all store locations
-   */
   async getStores(): Promise<Store[]> {
     const { data, error } = await supabase
       .from('stores')
-      .select('*')
+      .select('*') // This includes is_central column
       .order('name', { ascending: true });
 
-    if (error) {
-      console.error('Error fetching stores:', error);
-      throw error;
-    }
-
+    if (error) throw error;
     return data || [];
   },
 
-  /**
-   * Fetch specific store by ID
-   */
   async getStoreById(id: string): Promise<Store | null> {
+    if (!id) return null;
     const { data, error } = await supabase
       .from('stores')
       .select('*')
       .eq('id', id)
       .single();
 
-    if (error) {
-      console.error(`Error fetching store ${id}:`, error);
-      return null;
-    }
-
+    if (error) return null;
     return data;
-  },
-
-  /**
-   * Optional: Fetch product categories if you use them for filtering
-   */
-  async getCategories() {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('name', { ascending: true });
-
-    if (error) throw error;
-    return data || [];
   }
 };

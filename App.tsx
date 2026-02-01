@@ -88,11 +88,11 @@ const Sidebar = ({ isOpen, setOpen, user, onLogout }: any) => {
             )}
             
             {isSuperAdmin && (
-              <NavItem to="/purchases" icon={CreditCard} label="Purchases" active={location.pathname === '/purchases'} onClick={() => setOpen(false)} />
+              <NavItem to="/purchases" icon={CreditCard} label="Purchases(Not Live)" active={location.pathname === '/purchases'} onClick={() => setOpen(false)} />
             )}
 
             <NavItem to="/requests" icon={ClipboardList} label="Product Requests" active={location.pathname === '/requests'} onClick={() => setOpen(false)} />
-            <NavItem to="/wastage" icon={Trash2} label="Wastage (Mermas)" active={location.pathname === '/wastage'} onClick={() => setOpen(false)} />
+            {/* <NavItem to="/wastage" icon={Trash2} label="Wastage(Not Live)" active={location.pathname === '/wastage'} onClick={() => setOpen(false)} /> */}
             
             {isAnyAdmin && (
               <>
@@ -107,8 +107,8 @@ const Sidebar = ({ isOpen, setOpen, user, onLogout }: any) => {
             {isSuperAdmin && (
               <>
                 <div className="mt-8 mb-2 px-4 text-[10px] font-black text-slate-300 uppercase tracking-widest">Financial Hub</div>
-                <NavItem to="/expenses" icon={Receipt} label="Expenses" active={location.pathname === '/expenses'} onClick={() => setOpen(false)} />
-                <NavItem to="/reports" icon={BarChart3} label="Analytics" active={location.pathname === '/reports'} onClick={() => setOpen(false)} />
+                <NavItem to="/expenses" icon={Receipt} label="Expenses(Not Live)" active={location.pathname === '/expenses'} onClick={() => setOpen(false)} />
+                <NavItem to="/reports" icon={BarChart3} label="Analytics(Not Live)" active={location.pathname === '/reports'} onClick={() => setOpen(false)} />
               </>
             )}
 
