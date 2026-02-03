@@ -111,13 +111,13 @@ const Dashboard = ({ user }: { user: User }) => {
 
   const filteredSales = useMemo(() => {
     if (isCentralAdmin) return [];
-    const list = isSuperAdmin ? sales : sales.filter((s) => s.storeId === user.assignedStoreId);
+    const list = isSuperAdmin ? sales : sales.filter((s) => s.storeId === user.assigned_store_id);
     return list.filter((s) => isWithinRange(s.date));
-  }, [sales, isSuperAdmin, isCentralAdmin, user.assignedStoreId, dateFrom, dateTo]);
+  }, [sales, isSuperAdmin, isCentralAdmin, user.assigned_store_id, dateFrom, dateTo]);
 
   // Financial Stats
   const totalSales = useMemo(() => filteredSales.reduce((acc, s) => acc + (s.amount || 0), 0), [filteredSales]);
-  const totalPurchases = useMemo(() => purchases.filter((p) => isWithinRange(p.date)).reduce((acc, p) => acc + (p.totalCost || 0), 0), [purchases, dateFrom, dateTo]);
+  const totalPurchases = useMemo(() => purchases.filter((p) => isWithinRange(p.date)).reduce((acc, p) => acc + (p.total_cost || 0), 0), [purchases, dateFrom, dateTo]);
   const totalExpenses = useMemo(() => expenses.filter((e) => isWithinRange(e.date)).reduce((acc, e) => acc + (e.amount || 0), 0), [expenses, dateFrom, dateTo]);
   const netProfit = totalSales - totalPurchases - totalExpenses;
 
@@ -125,7 +125,7 @@ const Dashboard = ({ user }: { user: User }) => {
   const storeSummaries = useMemo(() => {
     const activeShops = isAnyAdmin
       ? stores.filter((s) => !s.is_central) // Exclude Central Hub from here
-      : stores.filter((s) => s.id === user.assignedStoreId);
+      : stores.filter((s) => s.id === user.assigned_store_id);
 
     return activeShops.map((store) => {
       const storeSales = isSuperAdmin ? sales.filter((s) => s.storeId === store.id && isWithinRange(s.date)).reduce((acc, s) => acc + (s.amount || 0), 0) : 0;
@@ -135,7 +135,7 @@ const Dashboard = ({ user }: { user: User }) => {
 
       return { ...store, revenue: storeSales, stockCount: storeStock, pendingReqs, lastAssign: recentAssignment };
     });
-  }, [stores, sales, stock, requests, transfers, isSuperAdmin, isAnyAdmin, user.assignedStoreId, dateFrom, dateTo]);
+  }, [stores, sales, stock, requests, transfers, isSuperAdmin, isAnyAdmin, user.assigned_store_id, dateFrom, dateTo]);
 
   const chartData = useMemo(() => storeSummaries.map((s) => ({ name: s.name.split(" ")[1] || s.name, Sales: s.revenue })), [storeSummaries]);
 

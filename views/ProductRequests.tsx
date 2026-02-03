@@ -112,9 +112,9 @@ const ProductRequests = ({ user }: { user: User }) => {
   const filteredRequests = useMemo(() => {
     const list = isAdmin
       ? requests
-      : requests.filter((r) => r.storeId === user.assignedStoreId);
+      : requests.filter((r) => r.storeId === user.assigned_store_id);
     return list.sort((a, b) => b.date.localeCompare(a.date));
-  }, [requests, isAdmin, user.assignedStoreId]);
+  }, [requests, isAdmin, user.assigned_store_id]);
 
   /* ================= IMAGE ================= */
 
@@ -159,14 +159,13 @@ const ProductRequests = ({ user }: { user: User }) => {
   };
 
   /* ================= SAVE ================= */
-
   const handleSave = async () => {
     try {
       setLoading(true);
 
       const payload: Omit<ProductRequest, "id"> = {
         date: new Date().toISOString().split("T")[0],
-        storeId: user.assignedStoreId || "central",
+        storeId: user.assigned_store_id || "central",
         items:
           requestMode === "list" && newRequest.items.some((i) => i.description)
             ? newRequest.items

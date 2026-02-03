@@ -18,7 +18,7 @@ const Users = () => {
     name: '',
     password: '',
     role: UserRole.STORE_MANAGER,
-    assignedStoreId: ''
+    assigned_store_id: ''
   });
 
   // Fetch data on mount
@@ -50,7 +50,7 @@ const Users = () => {
       name: '',
       password: '',
       role: UserRole.STORE_MANAGER,
-      assignedStoreId: stores.find(s => s.id !== 'central')?.id || ''
+      assigned_store_id: stores.find(s => s.id !== 'central')?.id || ''
     });
     setModalOpen(true);
   };
@@ -65,7 +65,7 @@ const Users = () => {
       if (editingUser) {
         // Update - note: password not updated here
         const updated = { ...editingUser, ...formData } as User;
-        await updateUser(updated);
+        await updateUser(editingUser.id, updated);
       } else {
         if (!formData.password) {
           alert('Password is required for new users');
@@ -126,7 +126,7 @@ const Users = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {users.map(u => (
+            {users.map((u: any) => (
               <tr key={u.id} className="hover:bg-slate-50/50">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
@@ -138,14 +138,14 @@ const Users = () => {
                 </td>
                 <td className="px-6 py-4 text-slate-600 font-mono text-sm">{u.username}</td>
                 <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${
-                    u.role === UserRole.ADMIN ? 'bg-indigo-50 text-indigo-600' : 'bg-primary-50 text-primary-600'
-                  }`}>
+                  <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${u.role === UserRole.ADMIN ? 'bg-indigo-50 text-indigo-600' : 'bg-primary-50 text-primary-600'
+                    }`}>
                     {u.role.replace('_', ' ')}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-600">
-                  {u.role === UserRole.ADMIN ? 'All Access' : (stores.find(s => s.id === u.assignedStoreId)?.name || 'N/A')}
+                  {/* {u.role === UserRole.ADMIN ? 'All Access' : (stores.find(s => s.id === u.assignedStoreId)?.name || 'N/A')} */}
+                  {u.role === UserRole.ADMIN ? 'All Access' : u?.store?.name ?? 'N/A'}
                 </td>
                 <td className="px-6 py-4 text-center">
                   <div className="flex justify-center gap-2">
@@ -236,8 +236,8 @@ const Users = () => {
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Assign to Store</label>
                   <select
                     className="w-full bg-white text-slate-900 border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary-500/20"
-                    value={formData.assignedStoreId || ''}
-                    onChange={e => setFormData({ ...formData, assignedStoreId: e.target.value })}
+                    value={formData.assigned_store_id || ''}
+                    onChange={e => setFormData({ ...formData, assigned_store_id: e.target.value })}
                   >
                     <option value="">Select Store</option>
                     {stores
@@ -262,7 +262,9 @@ const Users = () => {
                 onClick={handleSave}
                 className="flex-1 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary-700 transition-colors"
               >
-                Save Changes
+                {
+                  editingUser?.id ? 'Update User' : 'Create User'
+                }
               </button>
             </div>
           </div>

@@ -51,7 +51,7 @@ const Wastage = ({ user }: { user: User }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const storeFilter = isAdmin ? undefined : user.assignedStoreId;
+      const storeFilter = isAdmin ? undefined : user.assigned_store_id;
       
       const [rData, pData, sData] = await Promise.all([
         wastageService.getReports(storeFilter),
@@ -87,7 +87,7 @@ const Wastage = ({ user }: { user: User }) => {
   const initialForm: Omit<WastageReport, 'id'> = {
     date: format(new Date(), 'yyyy-MM-dd'),
     // Fallback to empty string if stores aren't loaded yet
-    storeId: user.assignedStoreId || '', 
+    storeId: user.assigned_store_id || '', 
     responsible: user.name,
     items: [{ ...initialItem }],
     totalWastage: 0,

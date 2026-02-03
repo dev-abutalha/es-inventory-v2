@@ -1,5 +1,5 @@
 import { Check, LogIn, ShieldAlert } from "lucide-react";
-import { React, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { loginUser } from "../src/services/auth.service";
 
 
@@ -21,36 +21,36 @@ const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
     }
   }, []);
 
-  
+
 
   const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError("");
-  setLoading(true);
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-  try {
-    const user = await loginUser(username, password);
+    try {
+      const user = await loginUser(username, password);
 
-    if (!user) {
-      setError("Invalid username or password");
-      return;
+      if (!user) {
+        setError("Invalid username or password");
+        return;
+      }
+
+      localStorage.setItem("rf_active_user", JSON.stringify(user));
+      onLoginSuccess();
+    } finally {
+      setLoading(false);
     }
-
-    localStorage.setItem("rf_active_user", JSON.stringify(user));
-    onLoginSuccess();
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
 
-  
+
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
         <div className="p-8 text-center bg-primary">
           <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto p-3 mb-4 text-primary shadow-lg">
-            <img src="https://esnaturalbarcelona.com/wp-content/uploads/2025/04/cropped-EsNaturalBCN-favicon-01-192x192.png" alt="" srcset="" />
+            <img src="https://esnaturalbarcelona.com/wp-content/uploads/2025/04/cropped-EsNaturalBCN-favicon-01-192x192.png" alt="" srcSet="" />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">
             EsNatural Store Manager
@@ -114,45 +114,44 @@ const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
               </label>
             </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-lg
-              ${
-                loading
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-lg
+              ${loading
                   ? "bg-primary-400 cursor-not-allowed"
                   : "bg-primary hover:bg-primary-700 active:scale-95"
-              }
+                }
               text-white`}
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-3">
-                <svg
-                  className="h-5 w-5 animate-spin text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                  />
-                </svg>
-                Signing in...
-              </span>
-            ) : (
-              "Sign In"
-            )}
-          </button>
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-3">
+                  <svg
+                    className="h-5 w-5 animate-spin text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                  Signing in...
+                </span>
+              ) : (
+                "Sign In"
+              )}
+            </button>
 
           </form>
 

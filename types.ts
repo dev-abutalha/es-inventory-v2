@@ -78,7 +78,7 @@ export interface User {
   name: string;
   password?: string;             // only if you store it (not recommended with Supabase Auth)
   role: UserRole;
-  assignedStoreId?: string;
+  assigned_store_id?: string;
   created_at?: string;
 }
 

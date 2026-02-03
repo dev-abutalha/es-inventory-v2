@@ -10,7 +10,7 @@ const INITIAL_STORES: Store[] = [
 const INITIAL_USERS: User[] = [
   { id: 'u_admin', username: 'admin', name: 'Jordi SuperAdmin', password: 'password123', role: UserRole.ADMIN },
   { id: 'u_central', username: 'central', name: 'Marc Central', password: 'password123', role: UserRole.CENTRAL_ADMIN },
-  { id: 'u_mgr1', username: 'maria', name: 'Maria Manager', password: 'password123', role: UserRole.STORE_MANAGER, assignedStoreId: 'st_001' },
+  { id: 'u_mgr1', username: 'maria', name: 'Maria Manager', password: 'password123', role: UserRole.STORE_MANAGER, assigned_store_id: 'st_001' },
 ];
 
 const STORAGE_KEYS = {
