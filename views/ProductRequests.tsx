@@ -285,16 +285,15 @@ const ProductRequests = ({ user }: { user: User }) => {
             </tbody>
           </table>
 
-          ${
-            viewRequest.note
-              ? `
+          ${viewRequest.note
+        ? `
             <div class="note-box">
               <strong style="text-transform: uppercase; font-size: 10px; margin-bottom: 8px; display: block;">Manager Notes:</strong>
               ${viewRequest.note}
             </div>
           `
-              : ""
-          }
+        : ""
+      }
 
           <div class="footer">
             <div class="sig-box">
@@ -362,13 +361,12 @@ const ProductRequests = ({ user }: { user: User }) => {
                   </p>
                 </div>
                 <span
-                  className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                    req.status === RequestStatus.PENDING
+                  className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${req.status === RequestStatus.PENDING
                       ? "bg-amber-50 text-amber-600 border-amber-100"
                       : req.status === RequestStatus.APPROVED
                         ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                         : "bg-rose-50 text-rose-600 border-rose-100"
-                  }`}
+                    }`}
                 >
                   {req.status}
                 </span>
@@ -430,13 +428,12 @@ const ProductRequests = ({ user }: { user: User }) => {
             <div className="p-8 border-b border-slate-100 flex justify-between items-center shrink-0">
               <div className="flex items-center gap-4">
                 <div
-                  className={`p-3 rounded-2xl ${
-                    viewRequest.status === RequestStatus.PENDING
+                  className={`p-3 rounded-2xl ${viewRequest.status === RequestStatus.PENDING
                       ? "bg-amber-100 text-amber-600"
                       : viewRequest.status === RequestStatus.APPROVED
                         ? "bg-emerald-100 text-emerald-600"
                         : "bg-rose-100 text-rose-600"
-                  }`}
+                    }`}
                 >
                   <ClipboardList size={24} />
                 </div>
@@ -458,7 +455,7 @@ const ProductRequests = ({ user }: { user: User }) => {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar grid grid-cols-1  gap-10">
               <div className="space-y-6">
                 <div>
                   <div className="flex justify-between items-center mb-4">
@@ -480,7 +477,7 @@ const ProductRequests = ({ user }: { user: User }) => {
                       viewRequest.items.map((item, idx) => (
                         <div key={idx} className="flex gap-2 items-center">
                           {isAdmin &&
-                          viewRequest.status === RequestStatus.PENDING ? (
+                            viewRequest.status === RequestStatus.PENDING ? (
                             <>
                               <input
                                 className="flex-[3] bg-slate-50 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-primary-100"
@@ -590,11 +587,13 @@ const ProductRequests = ({ user }: { user: User }) => {
                     </button>
                   </div>
                 ) : (
-                  <div className="h-[300px] bg-slate-50 rounded-[2.5rem] border border-slate-100 flex flex-col items-center justify-center text-slate-300">
-                    <ImageIcon size={48} className="mb-2" />
-                    <p className="text-[10px] font-black uppercase tracking-widest">
-                      No photo provided
-                    </p>
+                  <div className="flex items-center justify-center">
+                    <div className="h-36 w-full md:w-1/3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center text-slate-300">
+                      <ImageIcon size={48} className="mb-2" />
+                      <p className="text-[10px] font-black uppercase tracking-widest">
+                        No photo provided
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
