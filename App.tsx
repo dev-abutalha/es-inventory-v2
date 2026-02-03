@@ -93,7 +93,7 @@ const Sidebar = ({ isOpen, setOpen, user, onLogout }: any) => {
             )}
 
             <NavItem to="/requests" icon={ClipboardList} label="Product Requests" active={location.pathname === '/requests'} onClick={() => setOpen(false)} />
-            {/* <NavItem to="/wastage" icon={Trash2} label="Wastage(Not Live)" active={location.pathname === '/wastage'} onClick={() => setOpen(false)} /> */}
+            <NavItem to="/wastage" icon={Trash2} label="Wastage(Not Live)" active={location.pathname === '/wastage'} onClick={() => setOpen(false)} />
             
             {isAnyAdmin && (
               <>

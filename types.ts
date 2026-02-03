@@ -127,13 +127,15 @@ export interface ProductRequest {
 
 export interface WastageItem {
   time: string;
-  productId: string;
+  productId?: string | null;
   productName: string;
   reason: string;
   quantity: number;
+  unit: string;
   unitPrice: number;
   total: number;
 }
+
 
 export interface WastageReport {
   id: string;

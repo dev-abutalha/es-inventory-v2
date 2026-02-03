@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Plus, 
-  Trash2, 
+  Trash2,
+  Edit3,
   X, 
   Search, 
   Clock, 
@@ -22,6 +23,10 @@ import CalendarPicker from '../components/CalendarPicker';
 import { wastageService } from '../src/services/wastage.service';
 import { dataService } from '../src/services/dataService.service'; // We'll use this for products/stores
 
+
+
+
+
 const WASTAGE_REASONS = [
   'Ripe / Rotten', 
   'Mold', 
@@ -31,6 +36,10 @@ const WASTAGE_REASONS = [
   'Over-ordered', 
   'Supplier Issue'
 ];
+
+const UNIT_OPTIONS = ["kg", "Unidad", "Caja"];
+
+
 
 const Wastage = ({ user }: { user: User }) => {
   // --- State Management ---
@@ -46,7 +55,12 @@ const Wastage = ({ user }: { user: User }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isAdmin = user.role === UserRole.ADMIN;
+  const [editingReportId, setEditingReportId] = useState<string | null>(null);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+
+  
   // --- Initial Data Loading ---
   const loadData = async () => {
     try {
@@ -80,9 +94,25 @@ const Wastage = ({ user }: { user: User }) => {
     productName: '',
     reason: 'Ripe / Rotten',
     quantity: 0,
+    unit: 'kg',        // ✅ default
     unitPrice: 0,
     total: 0
   };
+
+  const handleEdit = (report: WastageReport) => {
+    setEditingReportId(report.id);
+    setForm({
+      date: report.date,
+      storeId: report.storeId,
+      responsible: report.responsible,
+      items: report.items,
+      totalWastage: report.totalWastage,
+      receiptImage: report.receiptImage || ''
+    });
+    setModalOpen(true);
+  };
+
+
 
   const initialForm: Omit<WastageReport, 'id'> = {
     date: format(new Date(), 'yyyy-MM-dd'),
@@ -162,20 +192,34 @@ const Wastage = ({ user }: { user: User }) => {
 
   const handleSave = async () => {
     try {
+      setIsSubmitting(true);
+
       const total = form.items.reduce((acc, item) => acc + item.total, 0);
-      await wastageService.createReport({
-        ...form,
-        totalWastage: total
-      });
-      
+
+      if (editingReportId) {
+        await wastageService.updateReport(editingReportId, {
+          ...form,
+          totalWastage: total
+        });
+      } else {
+        await wastageService.createReport({
+          ...form,
+          totalWastage: total
+        });
+      }
+
       setModalOpen(false);
       setForm(initialForm);
-      await loadData(); // Refresh list from Supabase
+      setEditingReportId(null);
+      await loadData();
     } catch (err) {
-      console.error("Save Error:", err);
-      alert("Error saving report to database.");
+      console.error(err);
+      alert("Error saving report.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Delete this wastage log?')) {
@@ -215,12 +259,23 @@ if (loading) {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredReports.map(report => (
           <div key={report.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col group hover:border-rose-200 transition-all relative">
-            <button 
-              onClick={() => handleDelete(report.id)}
-              className="absolute top-8 right-8 text-slate-200 hover:text-rose-500 transition-colors"
-            >
-              <Trash2 size={18} />
-            </button>
+<button
+  onClick={() => handleEdit(report)}
+  className="absolute top-8 right-16 text-slate-200 hover:text-blue-500 transition-colors"
+  title="Edit"
+>
+  <Edit3 size={18} />
+</button>
+
+<button 
+  onClick={() => handleDelete(report.id)}
+  className="absolute top-8 right-8 text-slate-200 hover:text-rose-500 transition-colors"
+  title="Delete"
+>
+  <Trash2 size={18} />
+</button>
+
+
             <div className="flex items-center gap-4 mb-6">
                <div className="p-4 bg-rose-50 text-rose-500 rounded-2xl">
                  <Trash2 size={24} />
@@ -248,7 +303,7 @@ if (loading) {
             <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
                <div>
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Loss</p>
-                  <p className="text-2xl font-black text-rose-600 tracking-tighter">€{report.totalWastage.toFixed(2)}</p>
+                  <p className="text-2xl font-black text-rose-600 tracking-tighter">€{report.totalWastage}</p>
                </div>
                <div className="text-right">
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Responsible</p>
@@ -289,12 +344,22 @@ if (loading) {
                    <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Store</label>
                       <select 
-                        className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 font-bold outline-none focus:ring-4 focus:ring-rose-50 transition-all"
+                        className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 font-bold outline-none
+                                  focus:ring-4 focus:ring-rose-50 transition-all
+                                  disabled:opacity-60 disabled:cursor-not-allowed"
                         value={form.storeId}
-                        onChange={e => setForm({...form, storeId: e.target.value})}
+                        disabled={!isAdmin}
+                        onChange={e => setForm({ ...form, storeId: e.target.value })}
                       >
-                         <option value="">Select Store</option>
-                         {stores.filter(s => s.id !== 'central').map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        {isAdmin && <option value="">Select Store</option>}
+
+                        {stores
+                          .filter(s => isAdmin || s.id === user.assignedStoreId)
+                          .map(s => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}
+                            </option>
+                          ))}
                       </select>
                    </div>
                    <CalendarPicker label="Date" value={form.date} onChange={d => setForm({...form, date: d})} />
@@ -329,7 +394,8 @@ if (loading) {
                               <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-[250px]">Product</th>
                               <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-[200px]">Reason</th>
                               <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-[120px] text-center">Weight / Qty</th>
-                              <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-[120px] text-center">€/kg or €/unit</th>
+                              <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-[120px] text-center">Unit</th>
+                              <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-[120px] text-center">Per Unit Cost</th>
                               <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-[120px] text-right">Total €</th>
                               <th className="pb-4 w-12"></th>
                            </tr>
@@ -394,6 +460,19 @@ if (loading) {
                                      onChange={e => updateItem(idx, 'quantity', Number(e.target.value))}
                                    />
                                 </td>
+                               <td className="py-4 pr-3">
+                                  <select
+                                    className="w-full px-3 py-3 bg-slate-50 rounded-xl text-[10px] font-black uppercase tracking-widest
+                                              outline-none border-none focus:ring-2 focus:ring-rose-100"
+                                    value={item.unit}
+                                    onChange={e => updateItem(idx, 'unit', e.target.value)}
+                                  >
+                                    {UNIT_OPTIONS.map(u => (
+                                      <option key={u} value={u}>{u}</option>
+                                    ))}
+                                  </select>
+                                </td>
+
                                 <td className="py-4 pr-3">
                                    <div className="relative">
                                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-200 text-xs">€</span>
@@ -407,9 +486,11 @@ if (loading) {
                                       />
                                    </div>
                                 </td>
+
                                 <td className="py-4 text-right pr-3 font-black text-rose-600">
                                    €{item.total.toFixed(2)}
                                 </td>
+
                                 <td className="py-4">
                                    <button onClick={() => removeItem(idx)} className="p-2 text-slate-200 hover:text-rose-500 rounded-lg"><X size={16} /></button>
                                 </td>
@@ -485,12 +566,20 @@ if (loading) {
                 </div>
                 <div className="flex gap-4 w-full sm:w-auto">
                    <button onClick={() => setModalOpen(false)} className="flex-1 sm:flex-none py-4 px-10 font-black text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-widest text-xs">Cancel</button>
-                   <button 
-                     onClick={handleSave}
-                     className="flex-[2] sm:flex-none py-4 px-16 bg-rose-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl shadow-rose-200 hover:bg-rose-700 transition-all active:scale-95"
-                   >
-                     Submit Wastage Report
-                   </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={isSubmitting}
+                      className="flex-[2] sm:flex-none py-4 px-16 bg-rose-600 text-white rounded-2xl
+                                font-black text-sm uppercase tracking-widest shadow-2xl shadow-rose-200
+                                hover:bg-rose-700 transition-all active:scale-95
+                                disabled:opacity-60 disabled:cursor-not-allowed
+                                flex items-center justify-center gap-3"
+                    >
+                      {isSubmitting && (
+                        <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      )}
+                      {isSubmitting ? 'Submitting...' : 'Submit Wastage Report'}
+                    </button>
                 </div>
              </div>
           </div>
