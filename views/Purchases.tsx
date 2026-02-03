@@ -66,7 +66,7 @@ const Purchases = ({ user }: { user: User }) => {
     date: format(new Date(), 'yyyy-MM-dd'),
     isQuickEntry: false,
     receiptImage: '',
-    items: [{ description: '', quantity: 1, unit: 'pcs', cost: 0 }] as PurchaseItem[],
+    items: [{ description: '', quantity: 1, unit: 'pcs', cost: 0, sellingPrice: 0 }] as PurchaseItem[],
     totalCost: 0
   };
 
@@ -77,7 +77,7 @@ const Purchases = ({ user }: { user: User }) => {
       .sort((a, b) => b.date.localeCompare(a.date));
   }, [purchases, dateFrom, dateTo]);
 
-  const totalCost = useMemo(() => filteredPurchases.reduce((a, s) => a + s.totalCost, 0), [filteredPurchases]);
+  const totalCost = useMemo(() => filteredPurchases.reduce((a, s) => a + s.total_cost, 0), [filteredPurchases]);
 
   const handleOpenAdd = () => {
     setEditingId(null);
@@ -88,13 +88,13 @@ const Purchases = ({ user }: { user: User }) => {
 
   const handleOpenEdit = (p: Purchase) => {
     setEditingId(p.id);
-    setQuickEntry(p.isQuickEntry || false);
+    setQuickEntry(p.is_quick_entry || false);
     setNewPurchase({
       date: p.date,
-      isQuickEntry: p.isQuickEntry || false,
-      receiptImage: p.receiptImage || '',
-      items: p.items ? JSON.parse(JSON.stringify(p.items)) : [],
-      totalCost: p.totalCost
+      isQuickEntry: p.is_quick_entry || false,
+      receiptImage: p.receipt_image || '',
+      items: p.purchase_items ? JSON.parse(JSON.stringify(p.purchase_items)) : [],
+      totalCost: p.total_cost
     });
     setModalOpen(true);
   };
@@ -127,7 +127,7 @@ const Purchases = ({ user }: { user: User }) => {
   const handleAddItem = () => {
     setNewPurchase({
       ...newPurchase,
-      items: [...(newPurchase.items || []), { description: '', quantity: 1, unit: 'pcs', cost: 0 }]
+      items: [...(newPurchase.items || []), { description: '', quantity: 1, unit: 'pcs', cost: 0, sellingPrice: 0 }]
     });
   };
 
@@ -143,7 +143,7 @@ const Purchases = ({ user }: { user: User }) => {
     updatedItems[index] = { ...updatedItems[index], [field]: value };
     setNewPurchase({ ...newPurchase, items: updatedItems });
   };
-console.log('newPurchase', purchaseData);
+  console.log('newPurchase', purchaseData);
   const handleSave = () => {
     const totalCostValue = quickEntry
       ? newPurchase.totalCost
@@ -151,10 +151,10 @@ console.log('newPurchase', purchaseData);
 
     const purchase: Purchase = {
       date: newPurchase.date,
-      totalCost: totalCostValue,
-      receiptImage: newPurchase.receiptImage,
-      isQuickEntry: quickEntry,
-      items: quickEntry ? undefined : newPurchase.items
+      total_cost: totalCostValue,
+      receipt_image: newPurchase.receiptImage,
+      is_quick_entry: quickEntry,
+      purchase_items: quickEntry ? undefined : newPurchase.items
     };
 
     if (editingId) {
@@ -162,6 +162,7 @@ console.log('newPurchase', purchaseData);
     } else {
       // db.addPurchase(purchase);
       addPurchase(purchase);
+      console.log('purchase', purchase);
     }
 
     setPurchases(db.getPurchases());
@@ -191,46 +192,77 @@ console.log('newPurchase', purchaseData);
 
       <div className="hidden md:block bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto no-scrollbar scroll-smooth">
-          <table className="w-full text-left border-collapse min-w-[800px]">
+          <table className="w-full text-left border-collapse min-w-[900px]">
             <thead className="bg-slate-50/50 border-b border-slate-100">
               <tr>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Store</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Supplier</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Summary</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Cost</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Product Name</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Quantity</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Unit</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Unit Price</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {purchaseData?.map(p => (
-                <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-8 py-5 text-slate-900 font-bold text-sm whitespace-nowrap">{p.date}</td>
-                  <td className="px-8 py-5 font-bold text-slate-700 whitespace-nowrap">{stores.find(s => s.id === p.storeId)?.name}</td>
-                  {/* <td className="px-8 py-5 text-slate-500 font-medium whitespace-nowrap">{p.supplier || '-'}</td> */}
-                  <td className="px-8 py-5 max-w-[300px]">
-                    {p.isQuickEntry ? (
-                      <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded-lg font-black uppercase tracking-widest flex items-center gap-1 w-fit">
-                        <ImageIcon size={10} /> Quick Receipt Entry
-                      </span>
-                    ) : (
-                      <div className="flex flex-wrap gap-1">
-                        {p.items?.map((item, idx) => (
-                          <span key={idx} className="bg-primary-50 text-[10px] px-2 py-0.5 rounded-lg font-black text-primary-600 uppercase">
-                            {item.description} ({item.quantity} {item.unit})
-                          </span>
-                        ))}
+              {purchaseData?.map((purchase) => (
+                purchase.purchase_items?.map((item: any, idx) => (
+                  <tr key={`${purchase.id}-${idx}`} className="hover:bg-slate-50/50 transition-colors">
+                    {/* Date */}
+                    <td className="px-8 py-5 text-slate-900 font-bold text-sm whitespace-nowrap">
+                      {new Date(purchase.date).toLocaleDateString()}
+                    </td>
+
+                    {/* Supplier */}
+                    <td className="px-8 py-5 font-bold text-slate-700">
+                      {item.product.supplier}
+                    </td>
+
+                    {/* Product Name */}
+                    <td className="px-8 py-5 font-bold text-slate-700">
+                      {item.product.name}
+                    </td>
+
+                    {/* Quantity */}
+                    <td className="px-8 py-5 text-slate-900 font-semibold">
+                      {item.quantity}
+                    </td>
+
+                    {/* Unit */}
+                    <td className="px-8 py-5 text-slate-500 font-medium uppercase text-xs">
+                      {item.product.unit}
+                    </td>
+
+                    {/* Unit Price */}
+                    <td className="px-8 py-5 text-right font-bold text-slate-700">
+                      €{item.product.cost_price.toFixed(2)}
+                    </td>
+
+                    {/* Total Cost */}
+                    <td className="px-8 py-5 text-right font-black text-slate-900 text-lg whitespace-nowrap">
+                      €{(item.product.cost_price * item.quantity).toFixed(2)}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-8 py-5">
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => handleOpenEdit(purchase)}
+                          className="p-2 text-slate-400 hover:text-primary transition-all"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(purchase.id)}
+                          className="p-2 text-slate-400 hover:text-rose-600 transition-all"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
-                    )}
-                  </td>
-                  {/* <td className="px-8 py-5 text-right font-black text-slate-900 text-lg whitespace-nowrap">€{p.totalCost.toFixed(2)}</td> */}
-                  <td className="px-8 py-5">
-                    <div className="flex justify-center gap-2">
-                      <button onClick={() => handleOpenEdit(p)} className="p-2 text-slate-400 hover:text-primary transition-all"><Edit2 size={16} /></button>
-                      <button onClick={() => handleDelete(p.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-all"><Trash2 size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
+                ))
               ))}
             </tbody>
           </table>
@@ -355,6 +387,11 @@ console.log('newPurchase', purchaseData);
                               <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Cost (€)</label>
                               {/* Fixed: Wrapped in an arrow function to access 'e' and pass parameters to handleItemChange correctly */}
                               <input type="number" className="w-full bg-white border-none rounded-xl px-4 py-3 text-sm font-bold shadow-sm" placeholder="0.00" value={item.cost} onChange={e => handleItemChange(idx, 'cost', Number(e.target.value))} />
+                            </div>
+                            <div className="flex-1 min-w-[80px]">
+                              <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Selling Price (€)</label>
+                              {/* Fixed: Wrapped in an arrow function to access 'e' and pass parameters to handleItemChange correctly */}
+                              <input type="number" className="w-full bg-white border-none rounded-xl px-4 py-3 text-sm font-bold shadow-sm" placeholder="0.00" value={item.sellingPrice} onChange={e => handleItemChange(idx, 'sellingPrice', Number(e.target.value))} />
                             </div>
                             <button onClick={() => handleRemoveItem(idx)} className="p-3 text-rose-500 hover:bg-rose-100 rounded-xl transition-colors shrink-0 mb-1"><Trash2 size={18} /></button>
                           </div>

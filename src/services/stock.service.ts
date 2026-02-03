@@ -102,15 +102,16 @@ export async function adjustStock(
 
 /* ================= PRODUCT SERVICE UPDATES ================= */
 
-export async function createProductWithStock(payload: any, initialQty: number, storeId: string) {
+export async function createProductWithStock(payload: any, initialQty?: number, storeId?: string, supplier?: string) {
   const { data, error } = await supabase.rpc('create_product_with_stock', {
-    p_name: payload.name,
+    p_name: payload.name || payload?.description,
     p_unit: payload.unit, // Now explicitly passing the unit type
-    p_cost_price: payload.costPrice,
+    p_cost_price: payload.costPrice || payload?.cost,
     p_selling_price: payload.sellingPrice,
-    p_min_stock_level: payload.minStockLevel,
-    p_initial_qty: initialQty,
-    p_store_id: storeId 
+    p_min_stock_level: payload.minStockLevel || 5,
+    p_initial_qty: initialQty || payload?.quantity,
+    p_store_id: storeId,
+    supplier: supplier 
   });
 
   if (error) throw error;

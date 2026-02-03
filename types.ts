@@ -26,16 +26,17 @@ export interface PurchaseItem {
   quantity: number;
   unit: string;
   cost: number;
+  sellingPrice: number;
 }
 
 export interface Purchase {
   id?: string;                    // uuid
   date: string;                  // keep as 'YYYY-MM-DD' or change to full ISO if needed
-  storeId?: string;
-  items?: PurchaseItem[];        // jsonb → keep as array
-  receiptImage?: string;         // base64 or URL
-  totalCost: number;
-  isQuickEntry?: boolean;
+  store_id?: string;
+  purchase_items?: PurchaseItem[];        // jsonb → keep as array
+  receipt_image?: string;         // base64 or URL
+  total_cost: number;
+  is_quick_entry?: boolean;
   created_at?: string;           // add if you want Supabase timestamps
 }
 
