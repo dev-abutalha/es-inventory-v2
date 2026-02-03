@@ -21,6 +21,7 @@ export interface Store {
 }
 
 export interface PurchaseItem {
+  supplier?: string;
   description: string;
   quantity: number;
   unit: string;
@@ -28,10 +29,9 @@ export interface PurchaseItem {
 }
 
 export interface Purchase {
-  id: string;                    // uuid
+  id?: string;                    // uuid
   date: string;                  // keep as 'YYYY-MM-DD' or change to full ISO if needed
-  storeId: string;
-  supplier: string;
+  storeId?: string;
   items?: PurchaseItem[];        // jsonb → keep as array
   receiptImage?: string;         // base64 or URL
   totalCost: number;

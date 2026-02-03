@@ -2,6 +2,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { Providers } from './provider/provider';
+import { Toaster } from 'react-hot-toast';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -10,7 +12,10 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
-  <React.StrictMode>
+  // <React.StrictMode>
+  <Providers>
     <App />
-  </React.StrictMode>
+    <Toaster />
+  </Providers>
+  // </React.StrictMode>
 );

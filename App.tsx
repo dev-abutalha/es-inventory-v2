@@ -76,7 +76,7 @@ const Sidebar = ({ isOpen, setOpen, user, onLogout }: any) => {
       <aside className={`fixed top-0 left-0 bottom-0 w-72 bg-white border-r border-slate-100 z-[70] transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-8 flex flex-col h-full">
           <div className="flex items-center gap-3 mb-10 px-2">
-              <img className="w-[150px] " src="https://esnaturalbarcelona.com/wp-content/uploads/2025/03/logo_esnatural_low.webp" alt="" srcset="" />
+              <img className="w-[150px] " src="https://esnaturalbarcelona.com/wp-content/uploads/2025/03/logo_esnatural_low.webp" alt="" srcSet="" />
           </div>
 
           <nav className="flex flex-col gap-1.5 flex-1 custom-scrollbar overflow-y-auto pr-2">
