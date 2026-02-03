@@ -44,9 +44,9 @@ const Reports = ({ user }: { user: User }) => {
       ["Summary", "Period Start", from],
       ["Summary", "Period End", to],
       ["Financial", "Total Sales", filteredSales.reduce((a, s) => a + s.amount, 0).toFixed(2)],
-      ["Financial", "Total Purchases", filteredPurchases.reduce((a, p) => a + p.totalCost, 0).toFixed(2)],
+      ["Financial", "Total Purchases", filteredPurchases.reduce((a, p) => a + p.total_cost, 0).toFixed(2)],
       ["Financial", "Total Expenses", filteredExpenses.reduce((a, e) => a + e.amount, 0).toFixed(2)],
-      ["Financial", "Net Profit", (filteredSales.reduce((a, s) => a + s.amount, 0) - filteredPurchases.reduce((a, p) => a + p.totalCost, 0) - filteredExpenses.reduce((a, e) => a + e.amount, 0)).toFixed(2)],
+      ["Financial", "Net Profit", (filteredSales.reduce((a, s) => a + s.amount, 0) - filteredPurchases.reduce((a, p) => a + p.total_cost, 0) - filteredExpenses.reduce((a, e) => a + e.amount, 0)).toFixed(2)],
     ];
 
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
@@ -68,7 +68,7 @@ const Reports = ({ user }: { user: User }) => {
     
     const storePerformance = stores.filter(s => s.id !== 'central').map(store => {
       const sRev = filteredSales.filter(s => s.storeId === store.id).reduce((acc, s) => acc + s.amount, 0);
-      const sPur = filteredPurchases.filter(p => p.storeId === store.id).reduce((acc, p) => acc + p.totalCost, 0);
+      const sPur = filteredPurchases.filter(p => p.store_id === store.id).reduce((acc, p) => acc + p.total_cost, 0);
       const sExp = filteredExpenses.filter(e => e.storeId === store.id).reduce((acc, e) => acc + e.amount, 0);
       return {
         name: store.name,

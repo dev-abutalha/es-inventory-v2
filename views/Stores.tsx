@@ -61,7 +61,7 @@ const Stores = ({ user }: { user: User }) => {
   };
 
   const handleOpenEdit = (store: StoreType) => {
-    const currentManager = managers.find(m => m.assignedStoreId === store.id);
+    const currentManager = managers.find(m => m.assigned_store_id === store.id);
     setEditingStore(store);
     setNewStore({ 
       name: store.name, 
@@ -110,7 +110,7 @@ const Stores = ({ user }: { user: User }) => {
   };
 
   const getStoreManager = (storeId: string) => {
-    return users.find(u => u.assignedStoreId === storeId && u.role === UserRole.STORE_MANAGER);
+    return users.find(u => u.assigned_store_id === storeId && u.role === UserRole.STORE_MANAGER);
   };
 
   if (loading) return <div className="p-8 text-center text-slate-500 font-bold">Loading Network...</div>;
@@ -131,7 +131,7 @@ const Stores = ({ user }: { user: User }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {stores.map(store => {
-          const manager = getStoreManager(store.id);
+          const manager =  getStoreManager(store.id);
           const isCentral = (store as any).is_central;
 
           return (

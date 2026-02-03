@@ -74,7 +74,7 @@ const Sales = ({ user }: { user: User }) => {
   const initialForm: Omit<Sale, "id"> = {
     date: format(new Date(), "yyyy-MM-dd"),
     storeId:
-      user.assignedStoreId || stores.find((s) => s.id !== "central")?.id || "",
+      user.assigned_store_id || stores.find((s) => s.id !== "central")?.id || "",
     amount: 0,
     morningShift: { ...emptyShift },
     afternoonShift: { ...emptyShift },
@@ -87,7 +87,7 @@ const Sales = ({ user }: { user: User }) => {
     const base =
       user.role === UserRole.ADMIN
         ? sales
-        : sales.filter((s) => s.storeId === user.assignedStoreId);
+        : sales.filter((s) => s.storeId === user.assigned_store_id);
 
     return base
       .filter((s) => s.date >= dateFrom && s.date <= dateTo)

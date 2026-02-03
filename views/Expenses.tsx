@@ -21,7 +21,7 @@ const Expenses = ({ user }: { user: User }) => {
   const [dateTo, setDateTo] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
   
   const initialForm = {
-    storeId: user.assignedStoreId || 'central',
+    storeId: user.assigned_store_id || 'central',
     category: 'Misc',
     description: '',
     amount: 0,
@@ -33,7 +33,7 @@ const Expenses = ({ user }: { user: User }) => {
   const filteredExpenses = useMemo(() => {
     const base = user.role === UserRole.ADMIN 
       ? expenses 
-      : expenses.filter(e => e.storeId === user.assignedStoreId);
+      : expenses.filter(e => e.storeId === user.assigned_store_id);
 
     return base.filter(e => e.date >= dateFrom && e.date <= dateTo)
                .sort((a,b) => b.date.localeCompare(a.date));

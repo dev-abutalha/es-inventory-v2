@@ -143,7 +143,7 @@ const Purchases = ({ user }: { user: User }) => {
     updatedItems[index] = { ...updatedItems[index], [field]: value };
     setNewPurchase({ ...newPurchase, items: updatedItems });
   };
-  console.log('newPurchase', purchaseData);
+
   const handleSave = () => {
     const totalCostValue = quickEntry
       ? newPurchase.totalCost
@@ -162,7 +162,6 @@ const Purchases = ({ user }: { user: User }) => {
     } else {
       // db.addPurchase(purchase);
       addPurchase(purchase);
-      console.log('purchase', purchase);
     }
 
     setPurchases(db.getPurchases());

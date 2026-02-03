@@ -22,6 +22,6 @@ export async function loginUser(
     username: data.username,
     name: data.name,
     role: data.role,
-    assignedStoreId: data.assigned_store_id,
+    assigned_store_id: data.assigned_store_id,
   };
 }

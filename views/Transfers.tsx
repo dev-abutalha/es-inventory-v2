@@ -35,7 +35,7 @@ const Transfers = ({ user }: { user: User }) => {
   const getProductName = (id: string) => products.find(p => p.id === id)?.name || id;
 
   const getCentralStock = (productId: string) => {
-    return stock.find(s => s.productId === productId && s.storeId === 'central')?.quantity || 0;
+    return stock.find(s => s.product_id === productId && s.store_id === 'central')?.quantity || 0;
   };
 
   return (

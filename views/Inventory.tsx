@@ -6,7 +6,7 @@ import { User, UserRole } from '../types';
 
 const Inventory = ({ user }: { user: User }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStore, setSelectedStore] = useState<string>(user.role === UserRole.ADMIN ? 'all' : (user.assignedStoreId || 'all'));
+  const [selectedStore, setSelectedStore] = useState<string>(user.role === UserRole.ADMIN ? 'all' : (user.assigned_store_id || 'all'));
 
   const stores = db.getStores();
   const products = db.getProducts();
@@ -16,10 +16,10 @@ const Inventory = ({ user }: { user: User }) => {
 
   const filteredStock = useMemo(() => {
     return products.map(product => {
-      const productStock = stock.filter(s => s.productId === product.id);
+      const productStock = stock.filter(s => s.product_id === product.id);
       let relevantStock = selectedStore === 'all' 
         ? productStock.reduce((acc, s) => acc + s.quantity, 0)
-        : productStock.find(s => s.storeId === selectedStore)?.quantity || 0;
+        : productStock.find(s => s.store_id === selectedStore)?.quantity || 0;
 
       return { ...product, totalStock: relevantStock };
     }).filter(p => 
