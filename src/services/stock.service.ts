@@ -111,7 +111,7 @@ export async function createProductWithStock(payload: any, initialQty?: number, 
     p_min_stock_level: payload.minStockLevel || 5,
     p_initial_qty: initialQty || payload?.quantity,
     p_store_id: storeId,
-    supplier: supplier 
+    // supplier: supplier 
   });
 
   if (error) throw error;
