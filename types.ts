@@ -144,3 +144,16 @@ export interface WastageReport {
   receiptImage?: string;
   created_at?: string;
 }
+
+
+export interface Supplier {
+  id: string;
+  created_at?: string;
+  name: string;
+  contact_person: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  category: string;
+  is_active: boolean;
+}

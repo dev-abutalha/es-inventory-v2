@@ -1,37 +1,38 @@
 
-import React, { useState } from 'react';
-import { HashRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  ShoppingCart, 
-  Receipt, 
-  BarChart3, 
-  LogOut,
-  Store,
-  CreditCard,
-  Users as UsersIcon,
-  MoreHorizontal,
-  PackageCheck,
+import {
+  BarChart3,
   ClipboardList,
+  CreditCard,
+  LayoutDashboard,
+  LogOut,
+  MoreHorizontal,
+  Package,
+  PackageCheck,
+  Receipt,
+  ShoppingCart,
+  Store,
   Trash2,
-  Package
+  Users as UsersIcon
 } from 'lucide-react';
+import { useState } from 'react';
+import { HashRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { db } from './db';
 import { User, UserRole } from './types';
 
 // Views
-import Dashboard from './views/Dashboard';
-import Stores from './views/Stores';
-import Purchases from './views/Purchases';
-import Sales from './views/Sales';
-import Expenses from './views/Expenses';
-import Reports from './views/Reports';
-import Users from './views/Users';
-import Login from './views/Login';
 import Assignment from './views/Assignment';
+import Dashboard from './views/Dashboard';
+import Expenses from './views/Expenses';
+import Login from './views/Login';
 import ProductRequests from './views/ProductRequests';
-import Wastage from './views/Wastage';
+import Purchases from './views/Purchases';
+import Reports from './views/Reports';
+import Sales from './views/Sales';
 import StockManagement from './views/StockManagement';
+import Stores from './views/Stores';
+import Users from './views/Users';
+import Wastage from './views/Wastage';
+import Suppliers from './views/Suppliers'
 
 const NavItem = ({ to, icon: Icon, label, active, onClick }: any) => (
   <Link
@@ -99,6 +100,10 @@ const Sidebar = ({ isOpen, setOpen, user, onLogout }: any) => {
                 <div className="mt-8 mb-2 px-4 text-[10px] font-black text-slate-300 uppercase tracking-widest">Logistics Hub</div>
                 <NavItem to="/assignment" icon={PackageCheck} label="Assign to Store" active={location.pathname === '/assignment'} onClick={() => setOpen(false)} />
                 <NavItem to="/stock" icon={Package} label="Stock Management" active={location.pathname === '/stock'} onClick={() => setOpen(false)} />
+                
+                {/* Added Suppliers NavItem */}
+                <NavItem to="/suppliers" icon={UsersIcon} label="Suppliers" active={location.pathname === '/suppliers'} onClick={() => setOpen(false)} />
+
                 <NavItem to="/stores" icon={Store} label="Store Locations" active={location.pathname === '/stores'} onClick={() => setOpen(false)} />
                 <NavItem to="/users" icon={UsersIcon} label="Staff Directory" active={location.pathname === '/users'} onClick={() => setOpen(false)} />
               </>
@@ -194,6 +199,10 @@ const AppContent = () => {
             <Route 
               path="/stores" 
               element={isAnyAdmin ? <Stores user={user} /> : <Navigate to="/" replace />} 
+            />
+            <Route 
+              path="/suppliers" 
+              element={isAnyAdmin ? <Suppliers /> : <Navigate to="/" replace />} 
             />
             <Route 
               path="/purchases" 
