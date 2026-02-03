@@ -16,7 +16,7 @@ import {
 import { getStores } from '../src/services/stores.service';
 import { Product, Stock, User, UserRole, Store as StoreType } from '../types';
 
-const UNIT_OPTIONS = ['pcs', 'kg', 'lb', 'box', 'pack', 'liter', 'meter'];
+const UNIT_OPTIONS = ["kg", "Unidad", "Caja"];
 
 const StockManagement = ({ user }: { user: User }) => {
   // --- State ---

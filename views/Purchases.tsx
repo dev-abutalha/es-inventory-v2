@@ -11,7 +11,7 @@ import { supplierService } from '@/src/services/suppliers.service';
 import { createPurchase, getPurchases } from '@/src/services/purchase.service';
 import toast from 'react-hot-toast';
 
-const UNIT_OPTIONS = ['pcs', 'kg', 'box', 'lb', 'pack', 'liter', 'meter', 'unit'];
+const UNIT_OPTIONS = ["kg", "Unidad", "Caja"];
 
 const Purchases = ({ user }: { user: User }) => {
   const [purchases, setPurchases] = useState(db.getPurchases());
@@ -292,43 +292,13 @@ const Purchases = ({ user }: { user: User }) => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex-row flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+              <div className="grid gap-6">
                 <CalendarPicker label="Date" value={newPurchase.date} onChange={v => setNewPurchase({ ...newPurchase, date: v })} />
-                {/* <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Store</label>
-                  <select className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 outline-none font-bold" value={newPurchase.storeId} onChange={e => setNewPurchase({ ...newPurchase, storeId: e.target.value })}>
-                    {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                </div> */}
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Receipt Image / Photo</label>
-                  <div className="space-y-4">
-                    {newPurchase.receiptImage ? (
-                      <div className="relative w-full h-full min-h-[300px] rounded-[2.5rem] overflow-hidden border-2 border-slate-100 bg-slate-50 flex items-center justify-center">
-                        <img src={newPurchase.receiptImage} className="w-full h-auto max-h-[400px] object-contain" />
-                        <button onClick={clearImage} className="absolute top-4 right-4 p-3 bg-rose-500 text-white rounded-2xl shadow-xl z-10"><X size={20} /></button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-[2.5rem] p-12 hover:bg-slate-50 hover:border-primary-300 transition-all min-h-[300px]"
-                      >
-                        <div className="w-20 h-20 bg-primary-50 text-primary-400 rounded-[2rem] flex items-center justify-center mb-4">
-                          <ImageIcon size={40} />
-                        </div>
-                        <span className="text-sm font-black text-slate-900 mb-1">Upload Receipt Photo</span>
-                        <span className="text-xs font-bold text-slate-400">PNG, JPG or PDF supported</span>
-                      </button>
-                    )}
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                  </div>
-                </div>
-
-                <div>
+              <div className="grid gap-8">
+                                <div>
                   {quickEntry ? (
                     <div className="space-y-6">
                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Quick Pricing</h3>
@@ -399,6 +369,32 @@ const Purchases = ({ user }: { user: User }) => {
                     </div>
                   )}
                 </div>
+                <div className="space-y-6">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Receipt Image / Photo</label>
+                  <div className="space-y-4">
+                    {newPurchase.receiptImage ? (
+                      <div className="relative w-full h-full min-h-[300px] rounded-[2.5rem] overflow-hidden border-2 border-slate-100 bg-slate-50 flex items-center justify-center">
+                        <img src={newPurchase.receiptImage} className="w-full h-auto max-h-[400px] object-contain" />
+                        <button onClick={clearImage} className="absolute top-4 right-4 p-3 bg-rose-500 text-white rounded-2xl shadow-xl z-10"><X size={20} /></button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-[2.5rem] p-12 hover:bg-slate-50 hover:border-primary-300 transition-all min-h-[300px]"
+                      >
+                        <div className="w-20 h-20 bg-primary-50 text-primary-400 rounded-[2rem] flex items-center justify-center mb-4">
+                          <ImageIcon size={40} />
+                        </div>
+                        <span className="text-sm font-black text-slate-900 mb-1">Upload Receipt Photo</span>
+                        <span className="text-xs font-bold text-slate-400">PNG, JPG or PDF supported</span>
+                      </button>
+                    )}
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                  </div>
+                </div>
+
+
+                
               </div>
             </div>
 

@@ -14,7 +14,7 @@ import {
 import { db } from '../db';
 import { Product, User } from '../types';
 
-const UNIT_OPTIONS = ['pcs', 'kg', 'lb', 'box', 'pack', 'liter', 'meter'];
+const UNIT_OPTIONS = ["kg", "Unidad", "Caja"];
 
 // Added 'key' to props type to resolve property 'key' does not exist error
 const ProductCard = ({ product, onUpdate, onDelete }: { product: Product, onUpdate: (p: Product) => void, onDelete: (id: string) => void, key?: React.Key }) => {
