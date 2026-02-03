@@ -29,7 +29,7 @@ import {
 } from "../src/services/productRequests.service";
 import { getStores } from "../src/services/stores.service";
 
-const UNIT_OPTIONS = ["pcs", "kg", "lb", "box", "pack", "liter", "meter"];
+const UNIT_OPTIONS = ["kg", "Unidad", "Caja"];
 
 const ProductRequests = ({ user }: { user: User }) => {
   const [requests, setRequests] = useState<ProductRequest[]>([]);
@@ -162,7 +162,7 @@ const ProductRequests = ({ user }: { user: User }) => {
 
   const handleSave = async () => {
     try {
-      setLoading(true); // start loader
+      setLoading(true);
 
       const payload: Omit<ProductRequest, "id"> = {
         date: new Date().toISOString().split("T")[0],
@@ -192,7 +192,7 @@ const ProductRequests = ({ user }: { user: User }) => {
     } catch (error) {
       console.error("Failed to save request:", error);
     } finally {
-      setLoading(false); // stop loader
+      setLoading(false);
     }
   };
 
@@ -728,8 +728,8 @@ const ProductRequests = ({ user }: { user: User }) => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                <div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                <div className='lg:col-span-2'>
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
                     Request Details
                   </h3>
@@ -778,7 +778,7 @@ const ProductRequests = ({ user }: { user: User }) => {
                         {newRequest.items.map((item, idx) => (
                           <div
                             key={idx}
-                            className="flex gap-3 items-center bg-slate-50 p-4 rounded-3xl border border-slate-100 group"
+                            className="flex gap-3 items-center bg-slate-50 p-2 rounded-3xl border border-slate-100 group"
                           >
                             <input
                               className="flex-[2] bg-white border-none rounded-2xl px-4 py-3 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-primary-100"
@@ -841,7 +841,7 @@ const ProductRequests = ({ user }: { user: User }) => {
                   </div>
                 </div>
 
-                <div className="flex flex-col">
+                <div className="flex flex-col lg:col-span-1">
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
                     Additional Notes
                   </h3>
@@ -879,7 +879,7 @@ const ProductRequests = ({ user }: { user: User }) => {
                   loading
                 }
                 onClick={handleSave}
-                className="flex-3 py-4 bg-primary text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary-700 disabled:opacity-50 active:scale-95 transition-all flex items-center justify-center gap-2"
+                className="flex-3 p-4 bg-primary text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary-700 disabled:opacity-50 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 {loading ? (
                   <svg
