@@ -22,17 +22,22 @@ export async function createPurchase(
   if (purchaseError) throw purchaseError;
 
   for (const item of purchaseData.purchase_items || []) {
-    const product = await createProductWithStock(item, item.quantity, '237a8825-84b3-4cba-a80b-ef28494cd565', item?.supplier);
+    const productId = await createProductWithStock(
+      item,
+      item.quantity,
+      "237a8825-84b3-4cba-a80b-ef28494cd565",
+      item?.supplier_id,
+    );
 
     const { error: purchaseItemError } = await supabase
       .from("purchase_items")
       .insert({
         purchase_id: purchase.id,
-        product_id: product.id,
+        product_id: productId,
         quantity: item.quantity,
       });
 
-    if (purchaseItemError) throw purchaseItemError
+    if (purchaseItemError) throw purchaseItemError;
   }
 
   return purchase;
@@ -43,20 +48,25 @@ export async function createPurchase(
 export async function getPurchases(): Promise<Purchase[]> {
   const { data, error } = await supabase
     .from("purchases")
-    .select(`
-      *,
-      purchase_items(
-        quantity,
-        product:product_id(
-          id,
-          name,
-          unit,
-          cost_price,
-          selling_price,
-          supplier
+    .select(
+      `
+    *,
+    purchase_items (
+      quantity,
+      product:products (
+        id,
+        name,
+        unit,
+        cost_price,
+        selling_price,
+        supplier_id,
+        supplier:suppliers (
+          name
         )
       )
-    `)
+    )
+  `,
+    )
     .order("date", { ascending: false });
 
   if (error) throw error;
