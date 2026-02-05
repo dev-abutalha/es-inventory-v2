@@ -323,17 +323,18 @@ const Purchases = ({ user }: { user: User }) => {
                       <div className="space-y-3">
                         {newPurchase.items?.map((item, idx) => (
                           <div key={idx} className="flex flex-wrap md:flex-nowrap gap-3 items-end bg-slate-50 p-5 rounded-3xl border border-slate-100">
-                            <div className="flex-[3] min-w-[150px]">
+                            <div className="flex-[2] min-w-[150px]">
                               <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Description</label>
                               <input className="w-full bg-white border-none rounded-xl px-4 py-3 text-sm font-bold shadow-sm" placeholder="Item Name" value={item.description} onChange={e => handleItemChange(idx, 'description', e.target.value)} />
                             </div>
-                            <div className="flex-1 min-w-[80px]">
+                            <div className="flex-2 min-w-[80px]">
                               <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Supplier</label>
                               <select
                                 className="w-full bg-white border-none rounded-xl px-4 py-3 text-[10px] font-black uppercase shadow-sm outline-none"
                                 value={item.supplier_id}
                                 onChange={e => handleItemChange(idx, 'supplier_id', e.target.value)}
                               >
+                                <option value="">Select Supplier</option>
                                 {suppliersData?.map(u => <option key={u?.id} value={u?.id}>{u?.name}</option>)}
                               </select>
                             </div>
