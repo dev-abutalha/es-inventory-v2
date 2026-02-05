@@ -11,7 +11,7 @@ import { supplierService } from '@/src/services/suppliers.service';
 import { createPurchase, getPurchases } from '@/src/services/purchase.service';
 import toast from 'react-hot-toast';
 
-const UNIT_OPTIONS = ['pcs', 'kg', 'box', 'lb', 'pack', 'liter', 'meter', 'unit'];
+const UNIT_OPTIONS = ['kg', 'Unidad', 'Caja'];
 
 const Purchases = ({ user }: { user: User }) => {
   const [purchases, setPurchases] = useState(db.getPurchases());

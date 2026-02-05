@@ -91,6 +91,7 @@ export interface Product {
   sellingPrice: number;
   minStockLevel: number;
   created_at?: string;
+  supplier_id?: string;
 }
 
 export interface Stock {

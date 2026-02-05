@@ -105,12 +105,12 @@ const Sidebar = ({ isOpen, setOpen, user, onLogout }: any) => {
                 <NavItem to="/suppliers" icon={UsersIcon} label="Suppliers" active={location.pathname === '/suppliers'} onClick={() => setOpen(false)} />
 
                 <NavItem to="/stores" icon={Store} label="Store Locations" active={location.pathname === '/stores'} onClick={() => setOpen(false)} />
-                <NavItem to="/users" icon={UsersIcon} label="Staff Directory" active={location.pathname === '/users'} onClick={() => setOpen(false)} />
               </>
             )}
 
             {isSuperAdmin && (
               <>
+              <NavItem to="/users" icon={UsersIcon} label="Staff Directory" active={location.pathname === '/users'} onClick={() => setOpen(false)} />
                 <div className="mt-8 mb-2 px-4 text-[10px] font-black text-slate-300 uppercase tracking-widest">Financial Hub</div>
                 <NavItem to="/expenses" icon={Receipt} label="Expenses(Not Live)" active={location.pathname === '/expenses'} onClick={() => setOpen(false)} />
                 <NavItem to="/reports" icon={BarChart3} label="Analytics(Not Live)" active={location.pathname === '/reports'} onClick={() => setOpen(false)} />
