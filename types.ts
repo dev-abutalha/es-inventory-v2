@@ -28,6 +28,8 @@ export interface PurchaseItem {
   unit: string;
   cost: number;
   sellingPrice: number;
+  per_unit_cost?: number;
+  per_unit_selling_price?: number;
 }
 
 export interface Purchase {

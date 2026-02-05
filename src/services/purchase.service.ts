@@ -60,6 +60,7 @@ export async function getPurchases(): Promise<Purchase[]> {
         cost_price,
         selling_price,
         supplier_id,
+        per_unit_cost,
         supplier:suppliers (
           name
         )
