@@ -120,12 +120,14 @@ const Sales = ({ user }: { user: User }) => {
   const handleSave = async () => {
     const mTotal =
       (newSale.morningShift?.posSales || 0) +
-      (newSale.morningShift?.cardSales || 0);
+      (newSale.morningShift?.cardSales || 0) +
+      (newSale.morningShift?.cashCounted || 0);
     const aTotal =
       (newSale.afternoonShift?.posSales || 0) +
-      (newSale.afternoonShift?.cardSales || 0);
+      (newSale.afternoonShift?.cardSales || 0) +
+      (newSale.afternoonShift?.cashCounted || 0);
 
-    const totalDaily = mTotal + aTotal;
+    const totalDaily = aTotal;
     if (!totalDaily || !newSale.storeId) return;
 
     try {
@@ -135,7 +137,6 @@ const Sales = ({ user }: { user: User }) => {
         ...newSale,
         amount: totalDaily,
       };
-
       if (editingId) {
         await updateSale({ id: editingId, ...payload });
       } else {
@@ -240,10 +241,10 @@ const Sales = ({ user }: { user: User }) => {
                 Store
               </th>
               <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                Morning POS+Card
+                Morning POS+Card+Cash
               </th>
               <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                Afternoon POS+Card
+                Afternoon POS+Card+Cash
               </th>
               <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
                 Total Revenue
@@ -269,14 +270,16 @@ const Sales = ({ user }: { user: User }) => {
                   €
                   {(
                     (sale.morningShift?.posSales || 0) +
-                    (sale.morningShift?.cardSales || 0)
+                    (sale.morningShift?.cardSales || 0) +
+                    (sale.morningShift?.cashCounted || 0)
                   ).toLocaleString()}
                 </td>
                 <td className="px-8 py-5 font-bold text-slate-500">
                   €
                   {(
                     (sale.afternoonShift?.posSales || 0) +
-                    (sale.afternoonShift?.cardSales || 0)
+                    (sale.afternoonShift?.cardSales || 0) + 
+                    (sale.afternoonShift?.cashCounted || 0)
                   ).toLocaleString()}
                 </td>
                 <td className="px-8 py-5 text-right font-black text-slate-900 text-lg">
