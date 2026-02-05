@@ -84,9 +84,9 @@ const Sidebar = ({ isOpen, setOpen, user, onLogout }: any) => {
             
             <div className="mt-6 mb-2 px-4 text-[10px] font-black text-slate-300 uppercase tracking-widest">Operations</div>
             
-            {(isSuperAdmin || user.role === UserRole.STORE_MANAGER) && (
+            {/* {(isSuperAdmin || user.role === UserRole.STORE_MANAGER) && ( */}
               <NavItem to="/sales" icon={ShoppingCart} label="Sales" active={location.pathname === '/sales'} onClick={() => setOpen(false)} />
-            )}
+            {/* )} */}
             
             {isSuperAdmin && (
               <NavItem to="/purchases" icon={CreditCard} label="Purchases" active={location.pathname === '/purchases'} onClick={() => setOpen(false)} />
