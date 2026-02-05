@@ -210,7 +210,8 @@ const AppContent = () => {
             />
             <Route 
               path="/sales" 
-              element={(isSuperAdmin || !isAnyAdmin) ? <Sales user={user} /> : <Navigate to="/" replace />} 
+              // element={(isSuperAdmin || !isAnyAdmin) ? <Sales user={user} /> : <Navigate to="/" replace />} 
+              element={<Sales user={user} />} 
             />
             <Route 
               path="/expenses" 
