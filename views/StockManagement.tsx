@@ -15,6 +15,8 @@ import {
 
 import { getStores } from '../src/services/stores.service';
 import { Product, Stock, User, UserRole, Store as StoreType } from '../types';
+import { useQuery } from '@tanstack/react-query';
+import { supplierService } from '@/src/services/suppliers.service';
 
 const UNIT_OPTIONS = ["kg", "Unidad", "Caja"];
 
@@ -28,6 +30,13 @@ const StockManagement = ({ user }: { user: User }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  const { data: suppliersData, isLoading: isSupplierLoading } = useQuery({
+    queryKey: ['Supplier'],
+    queryFn: () => {
+      return supplierService.getSuppliers();
+    },
+  })
   
   // Selection and Alerts
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -36,11 +45,12 @@ const StockManagement = ({ user }: { user: User }) => {
 
   const [formData, setFormData] = useState<Partial<Product & { currentHubStock: number }>>({
     name: '',
-    unit: 'pcs',
+    unit: 'kg',
     costPrice: 0,
     sellingPrice: 0,
     minStockLevel: 5,
-    currentHubStock: 0
+    currentHubStock: 0,
+    supplier_id: null
   });
 
   // --- Effects ---
@@ -108,7 +118,7 @@ const StockManagement = ({ user }: { user: User }) => {
   // --- Actions ---
   const handleOpenAdd = () => {
     setEditingProduct(null);
-    setFormData({ name: '', unit: 'pcs', costPrice: 0, sellingPrice: 0, minStockLevel: 5, currentHubStock: 0 });
+    setFormData({ name: '', unit: 'kg', costPrice: 0, sellingPrice: 0, minStockLevel: 5, currentHubStock: 0, supplier_id: null });
     setModalOpen(true);
   };
 
@@ -434,6 +444,17 @@ const StockManagement = ({ user }: { user: User }) => {
                   />
                 </div>
               </div>
+              <div className="col-span-1">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Supplier</label>
+                  <select 
+                    disabled={isSaving}
+                    className="w-full bg-slate-100 border-none rounded-2xl px-4 py-4 text-sm font-black outline-none focus:ring-4 focus:ring-primary-50 appearance-none disabled:opacity-50"
+                    value={formData.supplier_id}
+                    onChange={e => setFormData({...formData, supplier_id: e.target.value})}
+                  >
+                    {suppliersData?.map(u => <option key={u?.id} value={u?.id}>{u?.name}</option>)}
+                  </select>
+                </div>
             </div>
 
             <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-4">
