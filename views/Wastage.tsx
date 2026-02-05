@@ -354,7 +354,7 @@ if (loading) {
                         {isAdmin && <option value="">Select Store</option>}
 
                         {stores
-                          .filter(s => isAdmin || s.id === user.assignedStoreId)
+                          .filter(s => isAdmin || s.id === user.assigned_store_id)
                           .map(s => (
                             <option key={s.id} value={s.id}>
                               {s.name}

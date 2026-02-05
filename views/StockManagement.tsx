@@ -18,7 +18,7 @@ import { Product, Stock, User, UserRole, Store as StoreType } from '../types';
 import { useQuery } from '@tanstack/react-query';
 import { supplierService } from '@/src/services/suppliers.service';
 
-const UNIT_OPTIONS = ['kg', 'Unidad', 'Caja'];
+const UNIT_OPTIONS = ["kg", "Unidad", "Caja"];
 
 const StockManagement = ({ user }: { user: User }) => {
   // --- State ---

@@ -25,7 +25,7 @@ import {
 
 import { Product, Store as StoreType, User, UserRole } from "../types";
 
-const UNIT_OPTIONS = ["pcs", "kg", "lb", "box", "pack", "liter", "meter"];
+const UNIT_OPTIONS = ["kg", "Unidad", "Caja"];
 
 interface MatrixRow {
   id: string;
