@@ -87,6 +87,8 @@ export interface Product {
   id: string;
   name: string;
   unit: string;
+  per_unit_cost?: number;
+  per_unit_selling_price?: number;
   costPrice: number;
   sellingPrice: number;
   minStockLevel: number;
