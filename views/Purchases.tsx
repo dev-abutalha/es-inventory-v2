@@ -11,7 +11,7 @@ import { supplierService } from '@/src/services/suppliers.service';
 import { createPurchase, getPurchases } from '@/src/services/purchase.service';
 import toast from 'react-hot-toast';
 
-const UNIT_OPTIONS = ["kg", "Unidad", "Caja"];
+const UNIT_OPTIONS = ['pcs', 'kg', 'box', 'lb', 'pack', 'liter', 'meter', 'unit'];
 
 const Purchases = ({ user }: { user: User }) => {
   const [purchases, setPurchases] = useState(db.getPurchases());
@@ -215,32 +215,32 @@ const Purchases = ({ user }: { user: User }) => {
 
                     {/* Supplier */}
                     <td className="px-8 py-5 font-bold text-slate-700">
-                      {item.product.supplier}
+                      {item?.product?.supplier?.name}
                     </td>
 
                     {/* Product Name */}
                     <td className="px-8 py-5 font-bold text-slate-700">
-                      {item.product.name}
+                      {item?.product?.name}
                     </td>
 
                     {/* Quantity */}
                     <td className="px-8 py-5 text-slate-900 font-semibold">
-                      {item.quantity}
+                      {item?.quantity}
                     </td>
 
                     {/* Unit */}
                     <td className="px-8 py-5 text-slate-500 font-medium uppercase text-xs">
-                      {item.product.unit}
+                      {item?.product?.unit}
                     </td>
 
                     {/* Unit Price */}
                     <td className="px-8 py-5 text-right font-bold text-slate-700">
-                      €{item.product.cost_price.toFixed(2)}
+                      €{item?.product?.cost_price.toFixed(2)}
                     </td>
 
                     {/* Total Cost */}
                     <td className="px-8 py-5 text-right font-black text-slate-900 text-lg whitespace-nowrap">
-                      €{(item.product.cost_price * item.quantity).toFixed(2)}
+                      €{(item?.product?.cost_price * item?.quantity).toFixed(2)}
                     </td>
 
                     {/* Actions */}
@@ -331,10 +331,10 @@ const Purchases = ({ user }: { user: User }) => {
                               <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Supplier</label>
                               <select
                                 className="w-full bg-white border-none rounded-xl px-4 py-3 text-[10px] font-black uppercase shadow-sm outline-none"
-                                value={item.supplier}
-                                onChange={e => handleItemChange(idx, 'supplier', e.target.value)}
+                                value={item.supplier_id}
+                                onChange={e => handleItemChange(idx, 'supplier_id', e.target.value)}
                               >
-                                {suppliersData?.map(u => <option key={u?.id} value={u?.name}>{u?.name}</option>)}
+                                {suppliersData?.map(u => <option key={u?.id} value={u?.id}>{u?.name}</option>)}
                               </select>
                             </div>
                             <div className="flex-1 min-w-[80px]">
