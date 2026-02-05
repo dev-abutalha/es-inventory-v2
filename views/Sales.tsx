@@ -186,10 +186,9 @@ const Sales = ({ user }: { user: User }) => {
   };
 
   const currentTotalDisplay =
-    (newSale.morningShift?.posSales || 0) +
-    (newSale.morningShift?.cardSales || 0) +
     (newSale.afternoonShift?.posSales || 0) +
-    (newSale.afternoonShift?.cardSales || 0);
+    (newSale.afternoonShift?.cardSales || 0) +
+    (newSale.afternoonShift?.cashCounted || 0);
 
   if (loading) {
     return (
@@ -772,7 +771,7 @@ const Sales = ({ user }: { user: User }) => {
             <div className="p-8 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6 shrink-0">
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                  Total Daily Revenue (POS + Card Sum)
+                  Total Daily Revenue (POS + Card + Cash Sum)
                 </p>
                 <p className="text-4xl font-black text-slate-900 tracking-tighter">
                   €{currentTotalDisplay.toLocaleString()}
