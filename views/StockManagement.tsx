@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  Package, Search, Plus, Edit3, Trash2, Warehouse, 
+import {
+  Package, Search, Plus, Edit3, Trash2, Warehouse,
   Check, X, DollarSign, Layers, TrendingUp, AlertCircle, Loader2
 } from 'lucide-react';
 
@@ -18,7 +18,7 @@ import { Product, Stock, User, UserRole, Store as StoreType } from '../types';
 import { useQuery } from '@tanstack/react-query';
 import { supplierService } from '@/src/services/suppliers.service';
 
-const UNIT_OPTIONS = ['pcs', 'kg', 'lb', 'box', 'pack', 'liter', 'meter'];
+const UNIT_OPTIONS = ["kg", "Unidad", "Caja"];
 
 const StockManagement = ({ user }: { user: User }) => {
   // --- State ---
@@ -37,7 +37,7 @@ const StockManagement = ({ user }: { user: User }) => {
       return supplierService.getSuppliers();
     },
   })
-  
+
   // Selection and Alerts
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [alert, setAlert] = useState<{ msg: string; type: 'success' | 'error' | 'warning' } | null>(null);
@@ -46,6 +46,8 @@ const StockManagement = ({ user }: { user: User }) => {
   const [formData, setFormData] = useState<Partial<Product & { currentHubStock: number }>>({
     name: '',
     unit: 'kg',
+    per_unit_cost: 1,
+    per_unit_selling_price: 0,
     costPrice: 0,
     sellingPrice: 0,
     minStockLevel: 5,
@@ -70,14 +72,14 @@ const StockManagement = ({ user }: { user: User }) => {
     try {
       setLoading(true);
       const [prodData, stockData, storesData] = await Promise.all([
-        getProducts(), 
+        getProducts(),
         getStock(),
         getStores()
       ]);
 
       const hub = storesData.find((s: any) => s.is_central === true);
       setCentralStore(hub || null);
-      
+
       setProducts(prodData);
       setStock(stockData);
     } catch (error) {
@@ -110,7 +112,7 @@ const StockManagement = ({ user }: { user: User }) => {
   };
 
   const toggleSelectOne = (id: string) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
@@ -124,14 +126,19 @@ const StockManagement = ({ user }: { user: User }) => {
 
   const handleOpenEdit = (p: Product) => {
     setEditingProduct(p);
-    setFormData({ 
-      ...p, 
-      currentHubStock: getHubStock(p.id) 
+    setFormData({
+      ...p,
+      currentHubStock: getHubStock(p.id)
     });
     setModalOpen(true);
   };
 
   const handleSave = async () => {
+    const payload = {
+      ...formData,
+      costPrice: formData?.per_unit_cost * formData?.currentHubStock,
+      sellingPrice: formData?.per_unit_selling_price * formData?.currentHubStock,
+    }
     if (!formData.name || !centralStore) {
       setAlert({ msg: "No Central Hub identified.", type: 'error' });
       return;
@@ -140,7 +147,7 @@ const StockManagement = ({ user }: { user: User }) => {
     try {
       setIsSaving(true);
       if (editingProduct) {
-        await updateProduct(editingProduct.id, formData);
+        await updateProduct(editingProduct.id, payload);
         const current = getHubStock(editingProduct.id);
         const delta = (formData.currentHubStock || 0) - current;
         if (delta !== 0) {
@@ -148,7 +155,7 @@ const StockManagement = ({ user }: { user: User }) => {
         }
         setAlert({ msg: "Product updated successfully", type: 'success' });
       } else {
-        await createProductWithStock(formData, formData.currentHubStock || 0, centralStore.id);
+        await createProductWithStock(payload, formData.currentHubStock || 0, centralStore.id);
         setAlert({ msg: "New product registered", type: 'success' });
       }
 
@@ -192,15 +199,15 @@ const StockManagement = ({ user }: { user: User }) => {
 
   return (
     <div className="space-y-8 pb-20 relative">
-      
+
       {/* CUSTOM MINI ALERT (TOAST) */}
       {alert && (
         <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-top duration-300">
           <div className={`px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border font-black text-sm
-            ${alert.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 
-              alert.type === 'error' ? 'bg-rose-50 border-rose-100 text-rose-600' : 
-              'bg-amber-50 border-amber-100 text-amber-600'}`}>
-            {alert.type === 'success' ? <Check size={18}/> : <AlertCircle size={18}/>}
+            ${alert.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
+              alert.type === 'error' ? 'bg-rose-50 border-rose-100 text-rose-600' :
+                'bg-amber-50 border-amber-100 text-amber-600'}`}>
+            {alert.type === 'success' ? <Check size={18} /> : <AlertCircle size={18} />}
             {alert.msg}
           </div>
         </div>
@@ -209,29 +216,29 @@ const StockManagement = ({ user }: { user: User }) => {
       {/* CUSTOM DELETE CONFIRMATION MODAL */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[250] flex items-center justify-center p-4">
-            <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
-                <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Trash2 size={32} />
-                </div>
-                <h3 className="text-xl font-black text-slate-900 text-center mb-2">Confirm Deletion</h3>
-                <p className="text-slate-500 text-center font-medium text-sm mb-8">
-                    Are you sure you want to delete {selectedIds.length} item(s)? This action cannot be undone.
-                </p>
-                <div className="flex gap-3">
-                    <button 
-                        onClick={() => { setShowDeleteConfirm(false); setSelectedIds([]); }}
-                        className="flex-1 py-4 font-black text-slate-400 hover:bg-slate-50 rounded-2xl transition-all"
-                    >
-                        Cancel
-                    </button>
-                    <button 
-                        onClick={handleBulkDelete}
-                        className="flex-1 py-4 bg-rose-500 text-white font-black rounded-2xl shadow-lg shadow-rose-200 hover:bg-rose-600 transition-all active:scale-95"
-                    >
-                        Yes, Delete
-                    </button>
-                </div>
+          <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 size={32} />
             </div>
+            <h3 className="text-xl font-black text-slate-900 text-center mb-2">Confirm Deletion</h3>
+            <p className="text-slate-500 text-center font-medium text-sm mb-8">
+              Are you sure you want to delete {selectedIds.length} item(s)? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowDeleteConfirm(false); setSelectedIds([]); }}
+                className="flex-1 py-4 font-black text-slate-400 hover:bg-slate-50 rounded-2xl transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                className="flex-1 py-4 bg-rose-500 text-white font-black rounded-2xl shadow-lg shadow-rose-200 hover:bg-rose-600 transition-all active:scale-95"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -243,7 +250,7 @@ const StockManagement = ({ user }: { user: User }) => {
             <p className="text-slate-500 font-medium">Control hub supply for:</p>
             {centralStore ? (
               <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-lg text-xs font-black uppercase tracking-tighter flex items-center gap-1">
-                 {centralStore.name}
+                {centralStore.name}
               </span>
             ) : (
               <span className="text-rose-500 text-xs font-bold underline flex items-center gap-1">
@@ -252,10 +259,10 @@ const StockManagement = ({ user }: { user: User }) => {
             )}
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {selectedIds.length > 0 && isAnyAdmin && (
-            <button 
+            <button
               onClick={() => confirmDelete()}
               className="bg-rose-50 text-rose-600 px-6 py-4 rounded-2xl flex items-center gap-2 font-black hover:bg-rose-100 transition-all active:scale-95"
             >
@@ -263,7 +270,7 @@ const StockManagement = ({ user }: { user: User }) => {
             </button>
           )}
           {isAnyAdmin && (
-            <button 
+            <button
               onClick={handleOpenAdd}
               disabled={!centralStore}
               className="bg-primary text-white px-8 py-4 rounded-2xl flex items-center justify-center gap-3 font-black shadow-xl shadow-primary/20 hover:bg-primary-700 transition-all active:scale-95 disabled:opacity-50"
@@ -277,9 +284,9 @@ const StockManagement = ({ user }: { user: User }) => {
       {/* SEARCH BAR */}
       <div className="relative max-w-xl group">
         <Search size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" />
-        <input 
-          type="text" 
-          placeholder="Quick search master catalog..." 
+        <input
+          type="text"
+          placeholder="Quick search master catalog..."
           className="w-full pl-14 pr-6 py-5 bg-white border border-slate-100 rounded-3xl shadow-sm font-bold focus:ring-4 focus:ring-primary-50 transition-all outline-none"
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
@@ -293,8 +300,8 @@ const StockManagement = ({ user }: { user: User }) => {
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
                 <th className="pl-8 py-5 w-10">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="w-5 h-5 rounded-lg border-2 border-slate-200 text-primary focus:ring-primary cursor-pointer"
                     checked={selectedIds.length === filteredProducts.length && filteredProducts.length > 0}
                     onChange={toggleSelectAll}
@@ -314,12 +321,12 @@ const StockManagement = ({ user }: { user: User }) => {
                 const hubQty = getHubStock(p.id);
                 const margin = p.sellingPrice > 0 ? (((p.sellingPrice - p.costPrice) / p.sellingPrice) * 100).toFixed(0) : '0';
                 const isSelected = selectedIds.includes(p.id);
-                
+
                 return (
                   <tr key={p.id} className={`${isSelected ? 'bg-primary-50/40' : 'hover:bg-slate-50/50'} transition-colors`}>
                     <td className="pl-8 py-5">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="w-5 h-5 rounded-lg border-2 border-slate-200 text-primary focus:ring-primary cursor-pointer"
                         checked={isSelected}
                         onChange={() => toggleSelectOne(p.id)}
@@ -343,9 +350,9 @@ const StockManagement = ({ user }: { user: User }) => {
                     </td>
                     <td className="px-8 py-5 text-center">
                       <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl border ${hubQty <= p.minStockLevel ? 'bg-amber-50 border-amber-100 text-amber-600' : 'bg-primary-50 border-primary-100 text-primary-600'}`}>
-                         <Warehouse size={14} />
-                         <span className="text-lg font-black">{hubQty}</span>
-                         <span className="text-[10px] font-bold opacity-60 uppercase">{p.unit}</span>
+                        <Warehouse size={14} />
+                        <span className="text-lg font-black">{hubQty}</span>
+                        <span className="text-[10px] font-bold opacity-60 uppercase">{p.unit}</span>
                       </div>
                     </td>
                     <td className="px-8 py-5 text-center font-bold text-slate-700">€{p.costPrice.toFixed(2)}</td>
@@ -378,44 +385,57 @@ const StockManagement = ({ user }: { user: User }) => {
               </div>
               <button onClick={() => setModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full"><X size={20} className="text-slate-400" /></button>
             </div>
-            
+
             <div className="p-8 space-y-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Product Name</label>
-                  <input 
+                  <input
                     disabled={isSaving}
                     className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-black outline-none focus:ring-4 focus:ring-primary-50 transition-all disabled:opacity-50"
                     placeholder="e.g. Organic Tomato"
                     value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
-                <div className="col-span-1">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Unit</label>
-                  <select 
-                    disabled={isSaving}
-                    className="w-full bg-slate-100 border-none rounded-2xl px-4 py-4 text-sm font-black outline-none focus:ring-4 focus:ring-primary-50 appearance-none disabled:opacity-50"
-                    value={formData.unit}
-                    onChange={e => setFormData({...formData, unit: e.target.value})}
-                  >
-                    {UNIT_OPTIONS.map(opt => <option key={opt} value={opt}>{opt.toUpperCase()}</option>)}
-                  </select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Unit</label>
+                    <select
+                      disabled={isSaving}
+                      className="w-full bg-slate-100 border-none rounded-2xl px-4 py-4 text-sm font-black outline-none focus:ring-4 focus:ring-primary-50 appearance-none disabled:opacity-50"
+                      value={formData.unit}
+                      onChange={e => setFormData({ ...formData, unit: e.target.value })}
+                    >
+                      {UNIT_OPTIONS.map(opt => <option key={opt} value={opt}>{opt.toUpperCase()}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Per <span className='text-primary'>{formData.unit}</span></label>
+                    <input
+                      type='number'
+                      disabled={isSaving}
+                      className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-black outline-none focus:ring-4 focus:ring-primary-50 transition-all disabled:opacity-50"
+                      placeholder="e.g. 2 kg"
+                      value={formData.per_unit_cost}
+                      onChange={e => setFormData({ ...formData, per_unit_cost: Number(e.target.value) })}
+                    />
+                  </div>
                 </div>
               </div>
 
               <div>
                 <label className="block text-[10px] font-black text-primary uppercase tracking-widest mb-1.5">
-                   Stock ({formData.unit}) at {centralStore?.name || 'Central Hub'}
+                  Stock ({formData.unit}) at {centralStore?.name || 'Central Hub'}
                 </label>
                 <div className="relative">
                   <Warehouse size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-primary/30" />
-                  <input 
+                  <input
                     type="number"
                     disabled={isSaving}
                     className="w-full pl-14 pr-5 py-5 bg-primary-50/50 border-2 border-primary-50 rounded-2xl text-2xl font-black text-primary outline-none focus:ring-4 focus:ring-primary-100 transition-all disabled:opacity-50"
                     value={formData.currentHubStock}
-                    onChange={e => setFormData({...formData, currentHubStock: Number(e.target.value)})}
+                    onChange={e => setFormData({ ...formData, currentHubStock: Number(e.target.value) })}
                   />
                 </div>
               </div>
@@ -423,49 +443,53 @@ const StockManagement = ({ user }: { user: User }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Cost €</label>
-                  <input 
+                  <input
                     type="number"
                     step="0.01"
-                    disabled={isSaving}
+                    disabled
                     className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-black outline-none focus:ring-4 focus:ring-primary-50 transition-all disabled:opacity-50"
-                    value={formData.costPrice}
-                    onChange={e => setFormData({...formData, costPrice: Number(e.target.value)})}
+                    value={(formData?.per_unit_cost * formData?.currentHubStock) || formData.costPrice}
+                    onChange={e => setFormData({ ...formData, costPrice: Number(e.target.value) })}
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Sale €</label>
-                  <input 
-                    type="number"
-                    step="0.01"
-                    disabled={isSaving}
-                    className="w-full bg-primary-50 border-none rounded-2xl px-5 py-4 text-sm font-black text-primary outline-none focus:ring-4 focus:ring-primary-100 transition-all disabled:opacity-50"
-                    value={formData.sellingPrice}
-                    onChange={e => setFormData({...formData, sellingPrice: Number(e.target.value)})}
-                  />
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Sale Per <span className='text-primary'>{formData.unit}</span> €</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      disabled={isSaving}
+                      className="w-full bg-primary-50 border-none rounded-2xl px-5 py-4 text-sm font-black text-primary outline-none focus:ring-4 focus:ring-primary-100 transition-all disabled:opacity-50"
+                      value={formData.per_unit_selling_price}
+                      onChange={e => setFormData({ ...formData, per_unit_selling_price: Number(e.target.value) })}
+                    />
+                  </div>
+                  <p className='text-xs mt-1'>Total €: {(Number(formData.per_unit_selling_price) * Number(formData.currentHubStock)) || 0}</p>
                 </div>
               </div>
               <div className="col-span-1">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Supplier</label>
-                  <select 
-                    disabled={isSaving}
-                    className="w-full bg-slate-100 border-none rounded-2xl px-4 py-4 text-sm font-black outline-none focus:ring-4 focus:ring-primary-50 appearance-none disabled:opacity-50"
-                    value={formData.supplier_id}
-                    onChange={e => setFormData({...formData, supplier_id: e.target.value})}
-                  >
-                    {suppliersData?.map(u => <option key={u?.id} value={u?.id}>{u?.name}</option>)}
-                  </select>
-                </div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Supplier</label>
+                <select
+                  disabled={isSaving}
+                  className="w-full bg-slate-100 border-none rounded-2xl px-4 py-4 text-sm font-black outline-none focus:ring-4 focus:ring-primary-50 appearance-none disabled:opacity-50"
+                  value={formData.supplier_id}
+                  onChange={e => setFormData({ ...formData, supplier_id: e.target.value })}
+                >
+                  <option value="">Select Supplier</option>
+                  {suppliersData?.map(u => <option key={u?.id} value={u?.id}>{u?.name}</option>)}
+                </select>
+              </div>
             </div>
 
             <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-4">
-              <button 
+              <button
                 disabled={isSaving}
-                onClick={() => setModalOpen(false)} 
+                onClick={() => setModalOpen(false)}
                 className="flex-1 py-4 font-black text-slate-400 hover:text-slate-600 transition-all"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSave}
                 disabled={!formData.name || isSaving}
                 className="flex-[2] py-4 bg-primary text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"

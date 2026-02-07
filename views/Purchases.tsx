@@ -11,7 +11,7 @@ import { supplierService } from '@/src/services/suppliers.service';
 import { createPurchase, getPurchases } from '@/src/services/purchase.service';
 import toast from 'react-hot-toast';
 
-const UNIT_OPTIONS = ['pcs', 'kg', 'box', 'lb', 'pack', 'liter', 'meter', 'unit'];
+const UNIT_OPTIONS = ["kg", "Unidad", "Caja"];
 
 const Purchases = ({ user }: { user: User }) => {
   const [purchases, setPurchases] = useState(db.getPurchases());
@@ -66,10 +66,19 @@ const Purchases = ({ user }: { user: User }) => {
     date: format(new Date(), 'yyyy-MM-dd'),
     isQuickEntry: false,
     receiptImage: '',
-    items: [{ description: '', quantity: 1, unit: 'pcs', cost: 0, sellingPrice: 0 }] as PurchaseItem[],
+    items: [
+      {
+        description: '',
+        quantity: 1,
+        unit: 'kg',
+        cost: 0,
+        sellingPrice: 0,
+        supplier_id: '',
+        per_unit_cost: 0,
+        per_unit_selling_price: 0
+      }] as PurchaseItem[],
     totalCost: 0
   };
-
   const [newPurchase, setNewPurchase] = useState(initialForm);
 
   const filteredPurchases = useMemo(() => {
@@ -127,7 +136,7 @@ const Purchases = ({ user }: { user: User }) => {
   const handleAddItem = () => {
     setNewPurchase({
       ...newPurchase,
-      items: [...(newPurchase.items || []), { description: '', quantity: 1, unit: 'pcs', cost: 0, sellingPrice: 0 }]
+      items: [...(newPurchase.items || []), { description: '', quantity: 1, unit: 'kg', cost: 0, sellingPrice: 0, supplier_id: '', per_unit_cost: 0, per_unit_selling_price: 0 }]
     });
   };
 
@@ -137,11 +146,39 @@ const Purchases = ({ user }: { user: User }) => {
       items: (newPurchase.items || []).filter((_, i) => i !== index)
     });
   };
+console.log(newPurchase);
+  // const handleItemChange = (index: number, field: keyof PurchaseItem, value: any) => {
+  //   const updatedItems = [...(newPurchase.items || [])];
+  //   updatedItems[index] = { ...updatedItems[index], [field]: value };
+  //   setNewPurchase({ ...newPurchase, items: updatedItems });
+  // };
 
-  const handleItemChange = (index: number, field: keyof PurchaseItem, value: any) => {
+  const handleItemChange = (
+    index: number,
+    field: keyof PurchaseItem,
+    value: any
+  ) => {
     const updatedItems = [...(newPurchase.items || [])];
-    updatedItems[index] = { ...updatedItems[index], [field]: value };
-    setNewPurchase({ ...newPurchase, items: updatedItems });
+
+    const currentItem = {
+      ...updatedItems[index],
+      [field]: value,
+    };
+
+    const quantity = Number(currentItem.quantity) || 0;
+    const perUnitCost = Number(currentItem.per_unit_cost) || 0;
+    const perUnitSellingPrice =
+      Number(currentItem.per_unit_selling_price) || 0;
+
+    currentItem.cost = quantity * perUnitCost;
+    currentItem.sellingPrice = quantity * perUnitSellingPrice;
+
+    updatedItems[index] = currentItem;
+
+    setNewPurchase({
+      ...newPurchase,
+      items: updatedItems,
+    });
   };
 
   const handleSave = () => {
@@ -200,7 +237,9 @@ const Purchases = ({ user }: { user: User }) => {
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Quantity</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Unit</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Unit Price</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Cost Price</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Selling Price</th>
+                {/* <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Total</th> */}
                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Actions</th>
               </tr>
             </thead>
@@ -235,13 +274,19 @@ const Purchases = ({ user }: { user: User }) => {
 
                     {/* Unit Price */}
                     <td className="px-8 py-5 text-right font-bold text-slate-700">
-                      €{item?.product?.cost_price.toFixed(2)}
+                      €{item?.product?.per_unit_cost?.toFixed(2)}
+                    </td>
+                    <td className="px-8 py-5 text-right font-bold text-slate-700">
+                      €{item?.product?.cost_price?.toFixed(2)}
+                    </td>
+                    <td className="px-8 py-5 text-right font-bold text-slate-700">
+                      €{item?.product?.selling_price?.toFixed(2)}
                     </td>
 
                     {/* Total Cost */}
-                    <td className="px-8 py-5 text-right font-black text-slate-900 text-lg whitespace-nowrap">
+                    {/* <td className="px-8 py-5 text-right font-black text-slate-900 text-lg whitespace-nowrap">
                       €{(item?.product?.cost_price * item?.quantity).toFixed(2)}
-                    </td>
+                    </td> */}
 
                     {/* Actions */}
                     <td className="px-8 py-5">
@@ -298,7 +343,7 @@ const Purchases = ({ user }: { user: User }) => {
               </div>
 
               <div className="grid gap-8">
-                                <div>
+                <div>
                   {quickEntry ? (
                     <div className="space-y-6">
                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Quick Pricing</h3>
@@ -323,17 +368,18 @@ const Purchases = ({ user }: { user: User }) => {
                       <div className="space-y-3">
                         {newPurchase.items?.map((item, idx) => (
                           <div key={idx} className="flex flex-wrap md:flex-nowrap gap-3 items-end bg-slate-50 p-5 rounded-3xl border border-slate-100">
-                            <div className="flex-[3] min-w-[150px]">
+                            <div className="flex-[2] min-w-[150px]">
                               <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Description</label>
                               <input className="w-full bg-white border-none rounded-xl px-4 py-3 text-sm font-bold shadow-sm" placeholder="Item Name" value={item.description} onChange={e => handleItemChange(idx, 'description', e.target.value)} />
                             </div>
-                            <div className="flex-1 min-w-[80px]">
+                            <div className="flex-2 min-w-[80px]">
                               <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Supplier</label>
                               <select
                                 className="w-full bg-white border-none rounded-xl px-4 py-3 text-[10px] font-black uppercase shadow-sm outline-none"
                                 value={item.supplier_id}
                                 onChange={e => handleItemChange(idx, 'supplier_id', e.target.value)}
                               >
+                                <option value="">Select Supplier</option>
                                 {suppliersData?.map(u => <option key={u?.id} value={u?.id}>{u?.name}</option>)}
                               </select>
                             </div>
@@ -353,14 +399,27 @@ const Purchases = ({ user }: { user: User }) => {
                               </select>
                             </div>
                             <div className="flex-1 min-w-[80px]">
-                              <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Cost (€)</label>
-                              {/* Fixed: Wrapped in an arrow function to access 'e' and pass parameters to handleItemChange correctly */}
-                              <input type="number" className="w-full bg-white border-none rounded-xl px-4 py-3 text-sm font-bold shadow-sm" placeholder="0.00" value={item.cost} onChange={e => handleItemChange(idx, 'cost', Number(e.target.value))} />
+                              <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Per / <span className='text-primary'>{item.unit}</span> (€)</label>
+                              <input type="number" className="w-full bg-white border-none rounded-xl px-4 py-3 text-sm font-bold shadow-sm" placeholder="0.00" value={item.per_unit_cost} onChange={e => handleItemChange(idx, 'per_unit_cost', Number(e.target.value))} />
                             </div>
                             <div className="flex-1 min-w-[80px]">
-                              <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Selling Price (€)</label>
+                              <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Cost (€)</label>
                               {/* Fixed: Wrapped in an arrow function to access 'e' and pass parameters to handleItemChange correctly */}
-                              <input type="number" className="w-full bg-white border-none rounded-xl px-4 py-3 text-sm font-bold shadow-sm" placeholder="0.00" value={item.sellingPrice} onChange={e => handleItemChange(idx, 'sellingPrice', Number(e.target.value))} />
+                              <input disabled type="number" className="w-full bg-white border-none rounded-xl px-4 py-3 text-sm font-bold shadow-sm" placeholder="0.00" value={(item.per_unit_cost * item.quantity) || item.cost} onChange={e => handleItemChange(idx, 'cost', Number(e.target.value))} />
+                            </div>
+                            <div className="flex-1 min-w-[80px]">
+                              <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Sale Per / <span className='text-primary'>{item.unit}</span> (€)</label>
+                              <input type="number" className="w-full bg-white border-none rounded-xl px-4 py-3 text-sm font-bold shadow-sm" placeholder="0.00" value={item.per_unit_selling_price} onChange={e => handleItemChange(idx, 'per_unit_selling_price', Number(e.target.value))} />
+                            </div>
+                            <div className="flex-1 min-w-[80px]">
+                              <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Sale Price (€)</label>
+                              <input
+                                disabled
+                                type="number"
+                                className="w-full bg-white border-none rounded-xl px-4 py-3 text-sm font-bold shadow-sm"
+                                placeholder="0.00"
+                                value={(Number(item.per_unit_selling_price) * Number(item.quantity)) || 0}
+                              />
                             </div>
                             <button onClick={() => handleRemoveItem(idx)} className="p-3 text-rose-500 hover:bg-rose-100 rounded-xl transition-colors shrink-0 mb-1"><Trash2 size={18} /></button>
                           </div>
@@ -394,14 +453,14 @@ const Purchases = ({ user }: { user: User }) => {
                 </div>
 
 
-                
+
               </div>
             </div>
 
             <div className="p-8 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-6 shrink-0">
               <div className="text-center sm:text-left">
                 <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Calculated Total</p>
-                <p className="text-4xl font-black text-slate-900">€{(quickEntry ? newPurchase.totalCost : (newPurchase.items || []).reduce((a, i) => a + (i.quantity * i.cost), 0)).toFixed(2)}</p>
+                <p className="text-4xl font-black text-slate-900">€{(quickEntry ? newPurchase.totalCost : (newPurchase.items || []).reduce((a, i) => a + (i.quantity * i.per_unit_cost), 0)).toFixed(2)}</p>
               </div>
               <div className="flex gap-4 w-full sm:w-auto">
                 <button onClick={() => setModalOpen(false)} className="flex-1 sm:flex-none py-4 px-8 font-black text-slate-400">Cancel</button>

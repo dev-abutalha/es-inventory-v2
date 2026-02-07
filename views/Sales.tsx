@@ -120,12 +120,14 @@ const Sales = ({ user }: { user: User }) => {
   const handleSave = async () => {
     const mTotal =
       (newSale.morningShift?.posSales || 0) +
-      (newSale.morningShift?.cardSales || 0);
+      (newSale.morningShift?.cardSales || 0) +
+      (newSale.morningShift?.cashCounted || 0);
     const aTotal =
       (newSale.afternoonShift?.posSales || 0) +
-      (newSale.afternoonShift?.cardSales || 0);
+      (newSale.afternoonShift?.cardSales || 0) +
+      (newSale.afternoonShift?.cashCounted || 0);
 
-    const totalDaily = mTotal + aTotal;
+    const totalDaily = aTotal;
     if (!totalDaily || !newSale.storeId) return;
 
     try {
@@ -135,7 +137,6 @@ const Sales = ({ user }: { user: User }) => {
         ...newSale,
         amount: totalDaily,
       };
-
       if (editingId) {
         await updateSale({ id: editingId, ...payload });
       } else {
@@ -185,10 +186,9 @@ const Sales = ({ user }: { user: User }) => {
   };
 
   const currentTotalDisplay =
-    (newSale.morningShift?.posSales || 0) +
-    (newSale.morningShift?.cardSales || 0) +
     (newSale.afternoonShift?.posSales || 0) +
-    (newSale.afternoonShift?.cardSales || 0);
+    (newSale.afternoonShift?.cardSales || 0) +
+    (newSale.afternoonShift?.cashCounted || 0);
 
   if (loading) {
     return (
@@ -240,10 +240,10 @@ const Sales = ({ user }: { user: User }) => {
                 Store
               </th>
               <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                Morning POS+Card
+                Morning POS+Card+Cash
               </th>
               <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                Afternoon POS+Card
+                Afternoon POS+Card+Cash
               </th>
               <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">
                 Total Revenue
@@ -269,14 +269,16 @@ const Sales = ({ user }: { user: User }) => {
                   €
                   {(
                     (sale.morningShift?.posSales || 0) +
-                    (sale.morningShift?.cardSales || 0)
+                    (sale.morningShift?.cardSales || 0) +
+                    (sale.morningShift?.cashCounted || 0)
                   ).toLocaleString()}
                 </td>
                 <td className="px-8 py-5 font-bold text-slate-500">
                   €
                   {(
                     (sale.afternoonShift?.posSales || 0) +
-                    (sale.afternoonShift?.cardSales || 0)
+                    (sale.afternoonShift?.cardSales || 0) +
+                    (sale.afternoonShift?.cashCounted || 0)
                   ).toLocaleString()}
                 </td>
                 <td className="px-8 py-5 text-right font-black text-slate-900 text-lg">
@@ -351,7 +353,7 @@ const Sales = ({ user }: { user: User }) => {
         ))}
       </div>
 
-      <div className="fixed bottom-20 lg:bottom-0 left-0 right-0 lg:left-72 bg-slate-900 text-white z-40 border-t border-slate-800 p-6 flex items-center justify-between shadow-2xl">
+      {/* <div className="fixed bottom-20 lg:bottom-0 left-0 right-0 lg:left-72 bg-slate-900 text-white z-40 border-t border-slate-800 p-6 flex items-center justify-between shadow-2xl">
         <div>
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
             Period Total Revenue
@@ -363,7 +365,7 @@ const Sales = ({ user }: { user: User }) => {
         <div className="p-3 bg-primary/20 rounded-2xl text-primary-400">
           <TrendingUp size={24} />
         </div>
-      </div>
+      </div> */}
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
@@ -650,9 +652,9 @@ const Sales = ({ user }: { user: User }) => {
                       Morning Employee
                     </span>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex gap-1.5 md:gap-3">
                     <input
-                      className="flex-[2] bg-white border border-primary-100 rounded-xl px-4 py-2 text-sm font-bold outline-none"
+                      className="w-2/3 md:w-3/4 bg-white border border-primary-100 rounded-xl px-4 py-2 text-sm font-bold outline-none"
                       placeholder="Name"
                       value={newSale.morningShift?.employeeName}
                       onChange={(e) =>
@@ -663,7 +665,7 @@ const Sales = ({ user }: { user: User }) => {
                         )
                       }
                     />
-                    <div className="flex-1 relative">
+                    <div className="w-1/3 md:w-1/4 relative">
                       <Clock
                         size={12}
                         className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-300"
@@ -690,9 +692,9 @@ const Sales = ({ user }: { user: User }) => {
                       Afternoon Employee
                     </span>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex gap-1.5 md:gap-3">
                     <input
-                      className="flex-[2] bg-white border border-indigo-100 rounded-xl px-4 py-2 text-sm font-bold outline-none"
+                      className="w-2/3 md:w-3/4 bg-white border border-indigo-100 rounded-xl px-4 py-2 text-sm font-bold outline-none"
                       placeholder="Name"
                       value={newSale.afternoonShift?.employeeName}
                       onChange={(e) =>
@@ -703,7 +705,7 @@ const Sales = ({ user }: { user: User }) => {
                         )
                       }
                     />
-                    <div className="flex-1 relative">
+                    <div className="w-1/3 md:w-1/4 relative">
                       <Clock
                         size={12}
                         className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-300"
@@ -769,7 +771,7 @@ const Sales = ({ user }: { user: User }) => {
             <div className="p-8 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6 shrink-0">
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                  Total Daily Revenue (POS + Card Sum)
+                  Total Daily Revenue (POS + Card + Cash Sum)
                 </p>
                 <p className="text-4xl font-black text-slate-900 tracking-tighter">
                   €{currentTotalDisplay.toLocaleString()}
@@ -786,10 +788,9 @@ const Sales = ({ user }: { user: User }) => {
                   onClick={handleSave}
                   disabled={actionLoading}
                   className={`flex-1 sm:flex-none py-4 px-12 rounded-2xl font-black shadow-xl transition-all
-                    ${
-                      actionLoading
-                        ? "bg-slate-300 text-slate-500 cursor-not-allowed"
-                        : "bg-primary text-white shadow-primary/20 hover:bg-primary-700 active:scale-95"
+                    ${actionLoading
+                      ? "bg-slate-300 text-slate-500 cursor-not-allowed"
+                      : "bg-primary text-white shadow-primary/20 hover:bg-primary-700 active:scale-95"
                     }`}
                 >
                   {actionLoading ? "Saving…" : "Submit Entry"}
